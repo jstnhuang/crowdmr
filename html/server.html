@@ -7,10 +7,15 @@
       var peer = new Peer('{{.Id}}', {key: 'qqz19fffgabjfw29'});
       peer.on('connection', function(conn) {
         conn.on('open', function() {
-          conn.send('Thanks for helping with job {{.Id}}');
-          conn.send('Mapper: {{.MapperCode}}');
-          conn.send('Reducer: {{.ReducerCode}}');
-          conn.send('Data URL: {{.DataUrl}}');
+          conn.send({
+            mapper: {{.MapperCode}},
+            reducer: {{.ReducerCode}},
+            data: {{.DataUrl}}
+          });
+
+          conn.on('data', function(data) {
+            document.querySelector('#status').innerText = JSON.parse(data);
+          });
         });
       });
     </script>
@@ -20,5 +25,12 @@
     <p>Mapper: {{.MapperCode}}</p>
     <p>Reducer: {{.ReducerCode}}</p>
     <p>Data located at {{.DataUrl}}</p>
+    <p>Share this link to get people running your job:
+      <a href="/job/{{.Id}}" id="sharelink"></a></p>
+    <p id="status">Waiting for clients...</p>
+    <script>
+      document.querySelector('#sharelink').innerText =
+        location.protocol + "//" + location.host + "/job/{{.Id}}";
+    </script>
   </body>
 </html>

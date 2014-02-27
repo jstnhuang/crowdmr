@@ -7,12 +7,18 @@
     <h1>Create a job</h1>
     <form method="get" action="/server/{{.Id}}">
       <div>
-        Mapper:
-        <textarea name="mapper"></textarea>
+        <h2>Mapper</h2>
+        <code>// Mutate and return the data array.</code><br />
+        <code>function mapper(data) {</code><br />
+        <code>&nbsp;&nbsp;</code><textarea name="mapper"></textarea><br />
+        <code>}</code>
       </div>
       <div>
-        Reducer:
-        <textarea name="reducer"></textarea>
+        <h2>Reducer</h2>
+        <code>// Reduce the data array.</code><br />
+        <code>function reducer(data) {</code><br />
+        <code>&nbsp;&nbsp;</code><textarea name="reducer"></textarea><br />
+        <code>}</code>
       </div>
       <div>
         Location of data: <input type="text" name="dataurl" />
