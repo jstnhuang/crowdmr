@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Run a job - Crowd MapReduce</title>
+    <script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
+    <script>
+      var peer = new Peer('{{.Id}}', {key: 'qqz19fffgabjfw29'});
+      peer.on('connection', function(conn) {
+        conn.on('open', function() {
+          conn.send('Thanks for helping with job {{.Id}}');
+          conn.send('Mapper: {{.MapperCode}}');
+          conn.send('Reducer: {{.ReducerCode}}');
+          conn.send('Data URL: {{.DataUrl}}');
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Job {{.Id}}</h1>
+    <p>Mapper: {{.MapperCode}}</p>
+    <p>Reducer: {{.ReducerCode}}</p>
+    <p>Data located at {{.DataUrl}}</p>
+  </body>
+</html>

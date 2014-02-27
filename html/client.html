@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Help with a job - Crowd MapReduce</title>
+    <script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
+    <script>
+      var peer = new Peer({key: 'qqz19fffgabjfw29'});
+      var conn = peer.connect('{{.Id}}');
+      conn.on('open', function() {
+        conn.on('data', function(data) {
+          console.log(data);
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Helping with job {{.Id}}</h1>
+  </body>
+</html>
