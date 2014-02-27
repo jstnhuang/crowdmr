@@ -7,8 +7,15 @@
       var peer = new Peer({key: 'qqz19fffgabjfw29'});
       var conn = peer.connect('{{.Id}}');
       conn.on('open', function() {
-        conn.on('data', function(data) {
-          console.log(data);
+        conn.on('data', function(serverData) {
+          var data = JSON.parse(serverData.data);
+          var mapper = new Function("data", serverData.mapper);
+          var reducer = new Function("data", serverData.reducer);
+          console.log("mapper:", mapper);
+          console.log("reducer:", reducer);
+          var result = reducer(mapper(data))
+          console.log("Sending result", JSON.stringify(result));
+          conn.send(JSON.stringify(result));
         });
       });
     </script>
