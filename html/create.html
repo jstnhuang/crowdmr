@@ -2,28 +2,53 @@
 <html>
   <head>
     <title>Create a job - Crowd MapReduce</title>
+    {{template "Includes"}}
+    <style>
+      .code {
+        font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+        font-size: 0.9em;
+      }
+    </style>
   </head>
   <body>
-    <h1>Create a job</h1>
-    <form method="get" action="/server/{{.Id}}">
-      <div>
-        <h2>Mapper</h2>
-        <code>// Mutate and return the data array.</code><br />
-        <code>function mapper(data) {</code><br />
-        <code>&nbsp;&nbsp;</code><textarea name="mapper"></textarea><br />
-        <code>}</code>
-      </div>
-      <div>
-        <h2>Reducer</h2>
-        <code>// Reduce the data array.</code><br />
-        <code>function reducer(data) {</code><br />
-        <code>&nbsp;&nbsp;</code><textarea name="reducer"></textarea><br />
-        <code>}</code>
-      </div>
-      <div>
-        Location of data: <input type="text" name="dataurl" />
-      </div>
-      <div><input type="submit" value="Start job" /></div>
-    </form>
+    {{template "Nav"}}
+    <div class="container">
+      <h1>Create a job</h1>
+      <form method="get" action="/server/{{.Id}}" role="form"
+          class="form-horizontal">
+        <div class="form-group">
+          <label for="mapper" class="col-sm-2 control-label">Mapper</label>
+          <div class="col-sm-10">
+            <code>// Mutate and return the data array.</code><br />
+            <code>function mapper(data) {</code><br />
+            <textarea class="form-control code" rows="10"
+              name="mapper"></textarea>
+            <code>}</code>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reducer" class="col-sm-2 control-label">Reducer</label>
+          <div class="col-sm-10">
+            <code>// Reduce the data array.</code><br />
+            <code>function reducer(data) {</code><br />
+            <textarea class="form-control code" rows="10"
+              name="reducer"></textarea>
+            <code>}</code>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="dataurl" class="col-sm-2 control-label">
+            Location of data</label>
+          <div class="col-sm-10">
+            <input type="text" name="dataurl" />
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            <button type="submit" class="btn btn-lg btn-primary" />Start job</button>
+          </div>
+        </div>
+      </form>
+    </div>
   </body>
 </html>

@@ -1,10 +1,24 @@
 <!doctype html>
 <html>
   <head>
-    <title>Crowd MapReduce</title>
+    <title>Home - Crowd MapReduce</title>
+    {{template "Includes"}}
   </head>
   <body>
-    <h1>Crowd MapReduce</h1>
-    <p><a href="/create/{{.Id}}">Create a new job</a></p>
+    {{template "Nav"}}
+    <div class="container">
+      <div class="jumbotron">
+        <h1>Peer-to-peer MapReduce</h1>
+        <p>Crowd MapReduce enables you to run MapReduce without having to set up
+        and maintain a set of servers. Instead, you ask people to volunteer
+        their computing resources. Anyone can help with your job just by
+        visiting a URL.</p>
+        <p>Crowd MapReduce runs on the client-side, with no servers involved.
+        Communication happens using WebRTC.</p>
+        <p><a class="btn btn-primary btn-lg" role="button"
+            href="/create/{{.Id}}">
+          Create a new job</a></p>
+      </div>
+    </div>
   </body>
 </html>
