@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Help with a job - Crowd MapReduce</title>
+    {{template "Includes"}}
     <script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
     <script>
       var peer = new Peer({key: 'qqz19fffgabjfw29'});
@@ -21,6 +22,9 @@
     </script>
   </head>
   <body>
-    <h1>Helping with job {{.Id}}</h1>
+    {{template "Nav"}}
+    <div class="container">
+      <h1>Helping with job {{.Id}}</h1>
+    </div>
   </body>
 </html>

@@ -15,6 +15,7 @@ import (
 const MAX_IDS = 1727604
 
 var templates = template.Must(template.ParseFiles(
+	"html/base.html",
 	"html/index.html",
 	"html/create.html",
 	"html/server.html",

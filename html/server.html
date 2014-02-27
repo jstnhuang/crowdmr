@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Run a job - Crowd MapReduce</title>
+    {{template "Includes"}}
     <script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
     <script>
       var peer = new Peer('{{.Id}}', {key: 'qqz19fffgabjfw29'});
@@ -12,7 +13,7 @@
             reducer: {{.ReducerCode}},
             data: {{.DataUrl}}
           });
-
+    
           conn.on('data', function(data) {
             document.querySelector('#status').innerText = JSON.parse(data);
           });
@@ -21,16 +22,19 @@
     </script>
   </head>
   <body>
-    <h1>Job {{.Id}}</h1>
-    <p>Mapper: {{.MapperCode}}</p>
-    <p>Reducer: {{.ReducerCode}}</p>
-    <p>Data located at {{.DataUrl}}</p>
-    <p>Share this link to get people running your job:
-      <a href="/job/{{.Id}}" id="sharelink"></a></p>
-    <p id="status">Waiting for clients...</p>
-    <script>
-      document.querySelector('#sharelink').innerText =
-        location.protocol + "//" + location.host + "/job/{{.Id}}";
-    </script>
+    {{template "Nav"}}
+    <div class="container">
+      <h1>Job {{.Id}}</h1>
+      <p>Mapper: {{.MapperCode}}</p>
+      <p>Reducer: {{.ReducerCode}}</p>
+      <p>Data located at {{.DataUrl}}</p>
+      <p>Share this link to get people running your job:
+        <a href="/job/{{.Id}}" id="sharelink"></a></p>
+      <p id="status">Waiting for clients...</p>
+      <script>
+        document.querySelector('#sharelink').innerText =
+          location.protocol + "//" + location.host + "/job/{{.Id}}";
+      </script>
+    </div>
   </body>
 </html>
