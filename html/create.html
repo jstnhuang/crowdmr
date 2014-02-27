@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Create a job - Crowd MapReduce</title>
+  </head>
+  <body>
+    <h1>Create a job</h1>
+    <form method="get" action="/server/{{.Id}}">
+      <div>
+        Mapper:
+        <textarea name="mapper"></textarea>
+      </div>
+      <div>
+        Reducer:
+        <textarea name="reducer"></textarea>
+      </div>
+      <div>
+        Location of data: <input type="text" name="dataurl" />
+      </div>
+      <div><input type="submit" value="Start job" /></div>
+    </form>
+  </body>
+</html>
