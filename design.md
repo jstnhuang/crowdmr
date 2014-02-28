@@ -12,6 +12,8 @@ The job tracker maintains a list of connected clients and keep track of what com
 ## Data storage
 The HTML 5 Filesystem API allows the job tracker to store as much data as needed. However, the free space needed will have to be some multiple of the size of the data, since we must store intermediate results. Additionally, there's no guarantee that the intermediate results or final results are smaller in size than the input.
 
+The current plan is to require the job creator to split the input data before creating the job.
+
 The job tracker must give mappers the input data directly. In the original MapReduce implementation, the mappers store the intermediate outputs on their local disk, and notify the job tracker of the location of the data. However, this is not feasible in our case, since our assumption is that clients are unlikely to stay connected through to the completion of the job. Instead, the mappers will return the intermediate output directly to the job tracker, who will write it to the job creator's disk.
 
 Similarly, the job tracker will need to send the intermediate data to the reducers, and receive the final output back from the reducers. We will need to see how passing around so much data affects performance.
