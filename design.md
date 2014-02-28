@@ -3,14 +3,16 @@
 The goal of Crowd MapReduce is to build a peer-to-peer MapReduce system in the browser. It is meant to be a prototype that gives us an understanding of the challenges and design tradeoffs in building such a system.
 
 ## Overview
-A job creator specifies mapper and reducer code in Javascript, as well as the location of some data to process. They are then taken to the job tracker page.
+A job creator specifies mapper and reducer code in Javascript, and copies their data to a local HTML 5 filesystem. They are then taken to the job tracker page.
 
-The job creator is given a URL to share, containing the unique ID of the job. When a client visits the URL, they establish a connection to the job tracker using WebRTC. When the connection is set up, the server sends the mapper and reducer code to the client, as well as the data (or the location of the data) to process. The client executes the code on the data, and returns the result to the job tracker. The job tracker can then send more tasks to the client.
+The job creator is given a URL to share, containing the unique ID of the job. When a client visits the URL, they establish a connection to the job tracker using WebRTC. When the connection is set up, the server sends the mapper and reducer code to the client, as well as the data to process. The client executes the code on the data, and returns the result to the job tracker. The job tracker can then send more tasks to the client.
 
 The job tracker maintains a list of connected clients and keep track of what computation each client is doing. If a client disconnects, that part of the computation is lost, and the job tracker must assign it back to someone else.
 
 ## Data storage
-The HTML 5 Filesystem API should allow the job tracker to store as much data as needed. The job tracker must give mappers the input data directly. In the original MapReduce implementation, the mappers store the intermediate outputs on their local disk, and notify the job tracker of the location of the data. However, this is not feasible in our case, since our assumption is that clients are unlikely to stay connected through to the completion of the job. Instead, the mappers will return the intermediate output directly to the job tracker, who will write it to the job creator's disk.
+The HTML 5 Filesystem API allows the job tracker to store as much data as needed. However, the free space needed will have to be some multiple of the size of the data, since we must store intermediate results. Additionally, there's no guarantee that the intermediate results or final results are smaller in size than the input.
+
+The job tracker must give mappers the input data directly. In the original MapReduce implementation, the mappers store the intermediate outputs on their local disk, and notify the job tracker of the location of the data. However, this is not feasible in our case, since our assumption is that clients are unlikely to stay connected through to the completion of the job. Instead, the mappers will return the intermediate output directly to the job tracker, who will write it to the job creator's disk.
 
 Similarly, the job tracker will need to send the intermediate data to the reducers, and receive the final output back from the reducers. We will need to see how passing around so much data affects performance.
 
