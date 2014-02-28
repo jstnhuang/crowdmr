@@ -1,3 +1,7 @@
+/**
+ * FileSystem provides an abstraction to handle common operations with the HTML
+ * 5 filesystem API.
+ */
 function FileSystem() {
   this.filesystem = null;
 }
@@ -81,7 +85,6 @@ FileSystem.prototype.WriteText = function (filename, text) {
   var options = {create: true, exclusive: true};
   var isAppend = false;
   this.write(filename, blob, options, isAppend);
-
 }
 
 /**
