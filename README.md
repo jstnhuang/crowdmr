@@ -20,6 +20,6 @@ crowdmr
 This assumes the `bin/` folder of your Go workspace is in your `PATH`. This will launch the webserver on localhost:5500.
 
 ### HTML 5 Filesystem
-To debug the Filesystem API, go to chrome://flags/ and enable Developer Tools Experiments. When you restart the browser, the HTML 5 filesystem will now appear in the Resources tab of the Developer Tools.
+To debug the Filesystem API, go to chrome://flags/ and enable Developer Tools Experiments. Restart the browser. Open the developer tools, and go to Settings->Experiments->FileSystem inspection. Then close the developer tools and reopen it. The HTML 5 filesystem will now appear in the Resources tab.
 
 To clear the quota on the filesystem, go to chrome://settings/cookies, search for the app, and delete its entry.
