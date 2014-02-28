@@ -10,13 +10,9 @@ The job creator is given a URL to share, containing the unique ID of the job. Wh
 The job tracker maintains a list of connected clients and keep track of what computation each client is doing. If a client disconnects, that part of the computation is lost, and the job tracker must assign it back to someone else.
 
 ## Data storage
-We would like our system to operate on the client side as much as possible. However, MapReduce jobs typically process much more data than can be stored on any client. Instead, they typically use distributed filesystems that are optimized for sequential reads and writes. It's not possible for us to create a distributed filesystem on top of the clients, because our assumption is that clients will only be connected for a short period of time.
+The HTML 5 Filesystem API should allow the job tracker to store as much data as needed. The job tracker must give mappers the input data directly. In the original MapReduce implementation, the mappers store the intermediate outputs on their local disk, and notify the job tracker of the location of the data. However, this is not feasible in our case, since our assumption is that clients are unlikely to stay connected through to the completion of the job. Instead, the mappers will return the intermediate output directly to the job tracker, who will write it to the job creator's disk.
 
-The problem boils down to this: our software allows us to distribute computation, but not storage. The job creator must be willing to provide the storage, including read and write APIs, for the data. This also raises a question of how the data should be transferred. Ideally, the clients would fetch the data and write the outputs themselves, which minimizes communication with the job tracker. However, this implies that the clients will have free reign to read and write data to the cloud storage. The alternative would be to have the job tracker send the client the data to process directly, and likewise have the clients send the results back to the job tracker. Then, the job tracker could perform the read and write operations. However, this would result in significantly more network traffic.
-
-For now, it seems like the best solution is the former option: cloud storage which the clients have read/write access to.
-
-One possible option that would be good to investigate is the HTML5 filesystem API.
+Similarly, the job tracker will need to send the intermediate data to the reducers, and receive the final output back from the reducers. We will need to see how passing around so much data affects performance.
 
 ## MapReduce implementation
 We will follow the basic implementation as described in [MapReduce: Simplified Data Processing on Large Clusters] (http://static.googleusercontent.com/media/research.google.com/en/us/archive/mapreduce-osdi04.pdf), with some small modifications.
@@ -27,10 +23,14 @@ map(v1) -> list({k2: v2})
 reduce(k2, list(v2)) -> list(v2)
 ```
 
-The mappers will write their intermediate outputs into cloud storage, rather than local storage. Likewise, the reducers will write the intermediate outputs from cloud storage instead of from the local storage of the mappers.
+The mappers will send the intermediate output to the job tracker to write to the creator's disk, rather than the mapper's disk. Likewise, the reducers will receive the intermediate output from the job creator instead of from the local storage of the mappers. The reducers will send the final output to the job tracker.
 
-## WebRTC
-WebRTC is a relatively new technology. However, we use the PeerJS library, which vastly simplifies the setup and usage. PeerJS uses a publicly available STUN server from Google.
+## Peer to peer connection
+The peer-to-peer connections will be established between the job tracker and the clients using WebRTC. WebRTC requires some server support for a "signalling" process, in which browsers establish a peer-to-peer connection. We will use the PeerJS library, which vastly simplifies the setup and usage of WebRTC.
 
 ## Security and trustworthiness
-Our system allows job creators to pass arbitrary Javascript to clients to execute. Additionally, clients may send back arbitrary data to the job tracker. It is interesting to think about how this system could be made secure. However, security is not an explicit goal for this project.
+Our system allows job creators to pass arbitrary Javascript to clients to execute. Additionally, clients may send back arbitrary data to the job tracker to write on the job creator's disk. It is interesting to think about how this system could be made secure. However, security is not an explicit goal for this project.
+
+There are several possible mitigations of the security risks of our system. It may be possible, for example, to sanitize the Javascript run by the clients using some library like Google Caja. We would also need to sanitize data, to ensure that evaluating the data doesn't lead to some kind of exploit. We could also prompt the client to review the mapper and reducer code sent by the job tracker, and only run the code if the client accepts.
+
+The client could overwhelm the server with bogus results. The Filesystem API will enforce a limit on storage. However, the client can still ruin the job by sending back lots of fake results, or taking up so much storage that other clients can't proceed. One possible mitigation is to enforce a limit on the amount of data a client can send for a write. This assumes the job creator knows an upper bound on the size of the results. Another possible mitigation is for the job creator to randomly insert test cases into the data. The job tracker can ignore any client that gets any test case wrong.
