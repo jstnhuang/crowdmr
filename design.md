@@ -16,6 +16,8 @@ The problem boils down to this: our software allows us to distribute computation
 
 For now, it seems like the best solution is the former option: cloud storage which the clients have read/write access to.
 
+One possible option that would be good to investigate is the HTML5 filesystem API.
+
 ## MapReduce implementation
 We will follow the basic implementation as described in [MapReduce: Simplified Data Processing on Large Clusters] (http://static.googleusercontent.com/media/research.google.com/en/us/archive/mapreduce-osdi04.pdf), with some small modifications.
 
