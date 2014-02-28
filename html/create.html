@@ -9,13 +9,44 @@
         font-size: 0.9em;
       }
     </style>
+    <script src="/js/filesystem.js"></script>
+    <script>
+      function handleFileChange(filesystem) {
+        var datafile = document.querySelector('input[name=datafile]');
+        if (datafile.files.length > 0) {
+          var size = datafile.files[0].size;
+          var callback = function() {
+            document.querySelector('button[type=submit]').disabled = false;
+          };
+          filesystem.Init(10*size, callback);
+        }
+      }
+      function handleFormSubmit(filesystem) {
+        var files = document.querySelector('input[name=datafile]').files;
+        // Duplicate each file the user selected to the app's fs.
+        for (i=0; i<files.length; i++) {
+          filesystem.WriteBlob(files[i].name, files[i]);
+         }
+      }
+      var filesystem = new FileSystem();
+      window.onload = function() {
+        var datafile = document.querySelector('input[name=datafile]');
+        datafile.onchange = function() {
+          handleFileChange(filesystem);
+        }
+        var form = document.querySelector('form[name=jobform]');
+        form.onsubmit = function() {
+          handleFormSubmit(filesystem);
+        }
+      };
+    </script>
   </head>
   <body>
     {{template "Nav"}}
     <div class="container">
       <h1>Create a job</h1>
       <form method="get" action="/server/{{.Id}}" role="form"
-          class="form-horizontal">
+          class="form-horizontal" name="jobform">
         <div class="form-group">
           <label for="mapper" class="col-sm-2 control-label">Mapper</label>
           <div class="col-sm-10">
@@ -40,12 +71,13 @@
           <label for="dataurl" class="col-sm-2 control-label">
             Location of data</label>
           <div class="col-sm-10">
-            <input type="text" name="dataurl" />
+            <input type="file" name="datafile" />
           </div>
         </div>
         <div class="form-group">
           <div class="col-sm-offset-2 col-sm-10">
-            <button type="submit" class="btn btn-lg btn-primary" />Start job</button>
+            <button type="submit" class="btn btn-lg btn-primary" disabled="true"/>
+              Start job</button>
           </div>
         </div>
       </form>
