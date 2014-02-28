@@ -97,14 +97,6 @@ func ClientController(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-// TerminalController displays the HTML5 filesystem terminal page.
-func TerminalController(writer http.ResponseWriter, request *http.Request) {
-	err := templates.ExecuteTemplate(writer, "terminal.html", nil)
-	if err != nil {
-		log.Fatal("Failed to execute template: ", err)
-	}
-}
-
 // main sets up the URL routes and launches the HTTP server.
 func main() {
 	router := mux.NewRouter()
@@ -112,7 +104,6 @@ func main() {
 	router.HandleFunc("/create/{id}", JobCreationController)
 	router.HandleFunc("/server/{id}", JobServerController)
 	router.HandleFunc("/job/{id}", ClientController)
-	router.HandleFunc("/terminal", TerminalController)
 	router.Handle("/js/{rest}", http.StripPrefix("/js/",
 		http.FileServer(http.Dir("js/"))))
 	http.Handle("/", router)
