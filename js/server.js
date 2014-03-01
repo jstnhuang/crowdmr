@@ -16,7 +16,19 @@ function Server(id, mapperCode, reducerCode) {
     }
   );
   that.filesystem = new FileSystem();
-  that.filesystem.Init(0, function() {});
+  that.filesystem.Init(0, function() {
+    that.onFileSystemInit(that);
+  });
+}
+
+/**
+ * Handle initialization once the filesystem is ready.
+ */
+Server.prototype.onFileSystemInit = function(that) {
+  function callback(files) {
+    that.inputFiles = files;
+  };
+  that.filesystem.Ls([that.id, 'input'].join('/'), callback);
 }
 
 /**
@@ -37,12 +49,9 @@ Server.prototype.handlePeerConnection = function(that, connection) {
  */
 Server.prototype.handleClientConnection = function(that, connection) {
   that.filesystem.Read(
-    // TODO: create directories for each job and file type.
-    // e.g., /mvo5/{input,intermediate,output}/five.txt
-    // Remove hardcode.
-    "five.txt",
+    that.inputFiles[0].fullPath,
     function(lines) {
-      var data = lines.split('\n');
+      var data = lines.trim().split('\n');
       for (i=0; i<data.length; i++) {
         data[i] = parseInt(data[i]);
       }

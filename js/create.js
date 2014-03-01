@@ -29,16 +29,16 @@ JobCreator.prototype.handlePageLoad = function(that) {
  * and enable the submit button.
  */
 JobCreator.prototype.handleDataChange = function(that) {
- var files = that.datafiles.files;
- var OVERHEAD_PER_FILE = 200;
- var NUM_DIRECTORIES = 4;
- if (files.length > 0) {
-   var size = OVERHEAD_PER_FILE * NUM_DIRECTORIES;
-   for (i=0; i<files.length; i++) {
-     size += files[i].size + OVERHEAD_PER_FILE;
-   }
-   that.filesystem.Init(5*size, function() {});
- } 
+  var files = that.datafiles.files;
+  var OVERHEAD_PER_FILE = 200;
+  var NUM_DIRECTORIES = 4;
+  if (files.length > 0) {
+    var size = OVERHEAD_PER_FILE * NUM_DIRECTORIES;
+    for (i=0; i<files.length; i++) {
+      size += files[i].size + OVERHEAD_PER_FILE;
+    }
+    that.filesystem.Init(5*size, function() {});
+  } 
 }
 
 /**
@@ -51,6 +51,8 @@ JobCreator.prototype.handleFormSubmit = function(that) {
       var path = [inputDir, files[i].name].join('/');
       that.filesystem.WriteBlob(path, files[i]);
     }
+    that.form.action = '/server/' + that.id;
+    that.form.submit();
   };
   var inputDir = [that.id, 'input'].join('/');
   that.filesystem.Mkdir(inputDir, copyFiles);

@@ -35,7 +35,7 @@ FileSystem.prototype.handleGranted = function(desiredBytes, grantedBytes,
       grantedBytes,
       function(filesystem) {
         that.filesystem = filesystem;
-        console.log('Opened file system:', filesystem.name);
+        console.log('[Filesystem] Opened file system', filesystem.name);
         successCallback();
       },
       that.handleError
@@ -51,7 +51,9 @@ FileSystem.prototype.Create = function(filename) {
   that.filesystem.root.getFile(
     filename,
     {create: true, exclusive: true},
-    function (fileEntry) {},
+    function (fileEntry) {
+      console.log('[Filesystem] Created file', filename);
+    },
     that.handleError
   );
 }
@@ -156,6 +158,7 @@ FileSystem.prototype.Delete = function(filename) {
     {create: false},
     function (fileEntry) {
       fileEntry.remove(function() {}, that.handleError);
+      console.log("[Filesystem]: Deleted", filename)
     },
     that.handleError
   );
@@ -176,6 +179,7 @@ FileSystem.prototype.mkdir = function(rootDirEntry, folders, callback) {
       if (folders.length) {
         that.mkdir(dirEntry, folders.slice(1), callback);
       } else {
+        console.log('[Filesystem] Created directory', dirEntry.fullPath);
         callback();
       }
     },
@@ -184,7 +188,8 @@ FileSystem.prototype.mkdir = function(rootDirEntry, folders, callback) {
 };
 
 /**
- * Recursive creates the given path from the root.
+ * Recursively creates the given path from the root. When the path is created,
+ * the callback is called with no arguments.
  */
 FileSystem.prototype.Mkdir = function(path, callback) {
   var that = this;
@@ -192,8 +197,47 @@ FileSystem.prototype.Mkdir = function(path, callback) {
 }
 
 /**
+ * Private method that repeatedly calls readEntries until no more results are
+ * returned. It calls the callback with the array of files.
+ */
+FileSystem.prototype.ls = function(that, dirEntry, callback) {
+  var dirReader = dirEntry.createReader();
+  var entries = [];
+  var readEntries = function() {
+    dirReader.readEntries (
+      function(results) {
+        if (!results.length) {
+          callback(entries.sort());
+        } else {
+          entries = entries.concat(results);
+          readEntries();
+        }
+      },
+      that.handleError
+    );
+  };
+  readEntries();
+}
+
+/**
+ * Gets an array of files in the given path. The array is returned by calling
+ * the callback with the array as a parameter.
+ */
+FileSystem.prototype.Ls = function(path, callback) {
+  var that = this;
+  that.filesystem.root.getDirectory(
+    path,
+    {},
+    function(dirEntry) {
+      that.ls(that, dirEntry, callback);
+    },
+    that.handleError
+  );
+}
+
+/**
  * Reports an error.
  */
 FileSystem.prototype.handleError = function (error) {
-  console.log("File system error:", error.name + '.', error.message);
+  console.log('[Filesystem]', error.name + ':', error.message);
 }

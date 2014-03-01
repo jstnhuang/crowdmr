@@ -25,9 +25,6 @@ Client.prototype.handleServerData = function(that, serverData) {
   var data = JSON.parse(serverData.data);
   var mapper = new Function("data", serverData.mapper);
   var reducer = new Function("data", serverData.reducer);
-  console.log("mapper:", mapper);
-  console.log("reducer:", reducer);
   var result = reducer(mapper(data))
-  console.log("Sending result", JSON.stringify(result));
   that.connection.send(JSON.stringify(result));
 }
