@@ -30,10 +30,7 @@ JobCreator.prototype.handlePageLoad = function(that) {
 JobCreator.prototype.handleFileChange = function(that) {
  if (that.datafile.files.length > 0) {
    var size = that.datafile.files[0].size;
-   var callback = function() {
-     document.querySelector('button[type=submit]').disabled = false;
-   };
-   that.filesystem.Init(10*size + 1000, callback);
+   that.filesystem.Init(10*size + 1000, function() {});
  } 
 }
 
