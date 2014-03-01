@@ -158,7 +158,7 @@ FileSystem.prototype.Delete = function(filename) {
     {create: false},
     function (fileEntry) {
       fileEntry.remove(function() {}, that.handleError);
-      console.log("[Filesystem]: Deleted", filename)
+      console.log('[Filesystem]: Deleted', filename)
     },
     that.handleError
   );
