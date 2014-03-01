@@ -62,7 +62,8 @@ FileSystem.prototype.Create = function(filename) {
  * Write an arbitrary blob to the given file. This is a private method that
  * takes in options, and a boolean append option.
  */
-FileSystem.prototype.write = function(filename, blob, options, isAppend) {
+FileSystem.prototype.write = function(filename, blob, options, isAppend,
+    callback) {
   var that = this;
   that.filesystem.root.getFile(
     filename,
@@ -73,6 +74,8 @@ FileSystem.prototype.write = function(filename, blob, options, isAppend) {
           if (isAppend) {
             writer.seek(writer.length);
           }
+          writer.onwriteend = callback;
+          writer.onerror = that.handleError;
           writer.write(blob); 
         },
         that.handleError
@@ -85,43 +88,43 @@ FileSystem.prototype.write = function(filename, blob, options, isAppend) {
 /**
  * Write the given text to the given file.
  */
-FileSystem.prototype.WriteText = function(filename, text) {
+FileSystem.prototype.WriteText = function(filename, text, callback) {
   var that = this;
   var blob = new Blob([text], {type: 'text/plain'});
   var options = {create: true, exclusive: true};
   var isAppend = false;
-  that.write(filename, blob, options, isAppend);
+  that.write(filename, blob, options, isAppend, callback);
 }
 
 /**
  * Write an arbitrary blob to the given file.
  */
-FileSystem.prototype.WriteBlob = function(filename, blob) {
+FileSystem.prototype.WriteBlob = function(filename, blob, callback) {
   var that = this;
   var options = {create: true, exclusive: true};
   var isAppend = false;
-  that.write(filename, blob, options, isAppend);
+  that.write(filename, blob, options, isAppend, callback);
 }
 
 /**
  * Append the given text to the given file.
  */
-FileSystem.prototype.AppendText = function(filename, text) {
+FileSystem.prototype.AppendText = function(filename, text, callback) {
   var that = this;
   var blob = new Blob([text], {type: 'text/plain'});
   var options = {create: false};
   var isAppend = true;
-  that.write(filename, blob, options, isAppend);
+  that.write(filename, blob, options, isAppend, callback);
 }
 
 /**
  * Append the given text to the given file.
  */
-FileSystem.prototype.AppendBlob = function(filename, blob) {
+FileSystem.prototype.AppendBlob = function(filename, blob, callback) {
   var that = this;
   var options = {create: false};
   var isAppend = true;
-  that.write(filename, blob, options, isAppend);
+  that.write(filename, blob, options, isAppend, callback);
 }
 
 /**

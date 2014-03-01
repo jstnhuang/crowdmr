@@ -19,7 +19,8 @@ JobCreator.prototype.handlePageLoad = function(that) {
     that.handleDataChange(that);
   };
   that.form = document.querySelector('form[name=jobform]');
-  that.form.onsubmit = function() {
+  that.form.onsubmit = function(e) {
+    e.preventDefault();
     that.handleFormSubmit(that);
   };
 }
@@ -45,15 +46,29 @@ JobCreator.prototype.handleDataChange = function(that) {
  * When the form is submitted, write the data files to the HTML 5 filesystem.
  */
 JobCreator.prototype.handleFormSubmit = function(that) {
-  function copyFiles() {
-    var files = that.datafiles.files;
-    for (i=0; i<files.length; i++) {
-      var path = [inputDir, files[i].name].join('/');
-      that.filesystem.WriteBlob(path, files[i]);
-    }
+  var inputDir = [that.id, 'input'].join('/');
+  function submitForm() {
     that.form.action = '/server/' + that.id;
     that.form.submit();
+  }
+  function copyFiles(files, fileIndex) {
+    if (fileIndex == files.length) {
+      submitForm();
+    } else {
+      var path = [inputDir, files[fileIndex].name].join('/');
+      that.filesystem.WriteBlob(
+        path,
+        files[fileIndex],
+        function() {
+          copyFiles(files, fileIndex+1);
+        }
+      );
+    }
   };
-  var inputDir = [that.id, 'input'].join('/');
-  that.filesystem.Mkdir(inputDir, copyFiles);
+  that.filesystem.Mkdir(
+    inputDir,
+    function() {
+      copyFiles(that.datafiles.files, 0);
+    }
+  );
 }
