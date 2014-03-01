@@ -23,8 +23,8 @@ Client.prototype.handleConnectionOpen = function(that) {
  */
 Client.prototype.handleServerData = function(that, serverData) {
   var data = JSON.parse(serverData.data);
-  var mapper = new Function("data", serverData.mapper);
-  var reducer = new Function("data", serverData.reducer);
+  var mapper = new Function('data', serverData.mapper);
+  var reducer = new Function('data', serverData.reducer);
   var result = reducer(mapper(data))
   that.connection.send(JSON.stringify(result));
 }
