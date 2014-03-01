@@ -18,7 +18,7 @@
           var callback = function() {
             document.querySelector('button[type=submit]').disabled = false;
           };
-          filesystem.Init(10*size, callback);
+          filesystem.Init(10*size + 1000, callback);
         }
       }
       function handleFormSubmit(filesystem) {
