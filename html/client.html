@@ -4,21 +4,9 @@
     <title>Help with a job - Crowd MapReduce</title>
     {{template "Includes"}}
     <script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
+    <script src="/js/client.js"></script>
     <script>
-      var peer = new Peer({key: 'qqz19fffgabjfw29'});
-      var conn = peer.connect('{{.Id}}');
-      conn.on('open', function() {
-        conn.on('data', function(serverData) {
-          var data = JSON.parse(serverData.data);
-          var mapper = new Function("data", serverData.mapper);
-          var reducer = new Function("data", serverData.reducer);
-          console.log("mapper:", mapper);
-          console.log("reducer:", reducer);
-          var result = reducer(mapper(data))
-          console.log("Sending result", JSON.stringify(result));
-          conn.send(JSON.stringify(result));
-        });
-      });
+      var client = new Client('{{.Id}}');
     </script>
   </head>
   <body>
