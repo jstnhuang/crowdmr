@@ -5,37 +5,9 @@
     {{template "Includes"}}
     <script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
     <script src="/js/filesystem.js"></script>
+    <script src="/js/server.js"></script>
     <script>
-      var filesystem = new FileSystem();
-      filesystem.Init(0, function() {});
-      var peer = new Peer('{{.Id}}', {key: 'qqz19fffgabjfw29'});
-      peer.on('connection', function(conn) {
-        console.log("Peer connected");
-        // Client connection.
-        conn.on('open', function() {
-          filesystem.Read(
-            // TODO: create directories for each job and file type.
-            // e.g., /mvo5/{input,intermediate,output}/five.txt
-            // Remove hardcode.
-            "five.txt",
-            function(lines) {
-              var data = lines.split('\n');
-              for (i=0; i<data.length; i++) {
-                data[i] = parseInt(data[i]);
-              }
-              conn.send({
-                mapper: {{.MapperCode}},
-                reducer: {{.ReducerCode}},
-                data: JSON.stringify(data)
-              })
-            }
-          );
-          // Receive data from the client.
-          conn.on('data', function(data) {
-            document.querySelector('#status').innerText = JSON.parse(data);
-          });
-        });
-      });
+      var server = new Server('{{.Id}}', '{{.MapperCode}}', '{{.ReducerCode}}');
     </script>
   </head>
   <body>
