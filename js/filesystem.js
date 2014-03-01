@@ -3,13 +3,14 @@
  * 5 filesystem API.
  */
 function FileSystem() {
-  this.filesystem = null;
+  var that = this;
+  that.filesystem = null;
 }
 
 /**
  * Initialize the file system, requesting access to a certain amount of bytes.
  */
-FileSystem.prototype.Init = function (desiredBytes, successCallback) {
+FileSystem.prototype.Init = function(desiredBytes, successCallback) {
   var that = this;
   navigator.webkitPersistentStorage.requestQuota(
     desiredBytes,
@@ -25,10 +26,10 @@ FileSystem.prototype.Init = function (desiredBytes, successCallback) {
  * so, it requests access to the filesystem and calls the success callback.
  * Otherwise, it does nothing.
  */
-FileSystem.prototype.handleGranted = function (desiredBytes, grantedBytes,
+FileSystem.prototype.handleGranted = function(desiredBytes, grantedBytes,
     successCallback) {
+  var that = this;
   if (grantedBytes >= desiredBytes) {
-    var that = this;
     window.webkitRequestFileSystem(
       window.PERSISTENT,
       grantedBytes,
@@ -45,12 +46,13 @@ FileSystem.prototype.handleGranted = function (desiredBytes, grantedBytes,
 /**
  * Creates the given file.
  */
-FileSystem.prototype.Create = function (filename) {
-  this.filesystem.root.getFile(
+FileSystem.prototype.Create = function(filename) {
+  var that = this;
+  that.filesystem.root.getFile(
     filename,
     {create: true, exclusive: true},
     function (fileEntry) {},
-    this.handleError
+    that.handleError
   );
 }
 
@@ -58,8 +60,9 @@ FileSystem.prototype.Create = function (filename) {
  * Write an arbitrary blob to the given file. This is a private method that
  * takes in options, and a boolean append option.
  */
-FileSystem.prototype.write = function (filename, blob, options, isAppend) {
-  this.filesystem.root.getFile(
+FileSystem.prototype.write = function(filename, blob, options, isAppend) {
+  var that = this;
+  that.filesystem.root.getFile(
     filename,
     options,
     function (fileEntry) {
@@ -70,56 +73,61 @@ FileSystem.prototype.write = function (filename, blob, options, isAppend) {
           }
           writer.write(blob); 
         },
-        this.handleError
+        that.handleError
       );
     },
-    this.handleError
+    that.handleError
   );
 }
 
 /**
  * Write the given text to the given file.
  */
-FileSystem.prototype.WriteText = function (filename, text) {
+FileSystem.prototype.WriteText = function(filename, text) {
+  var that = this;
   var blob = new Blob([text], {type: 'text/plain'});
   var options = {create: true, exclusive: true};
   var isAppend = false;
-  this.write(filename, blob, options, isAppend);
+  that.write(filename, blob, options, isAppend);
 }
 
 /**
  * Write an arbitrary blob to the given file.
  */
-FileSystem.prototype.WriteBlob = function (filename, blob) {
+FileSystem.prototype.WriteBlob = function(filename, blob) {
+  var that = this;
   var options = {create: true, exclusive: true};
   var isAppend = false;
-  this.write(filename, blob, options, isAppend);
+  that.write(filename, blob, options, isAppend);
 }
 
 /**
  * Append the given text to the given file.
  */
-FileSystem.prototype.AppendText = function (filename, text) {
+FileSystem.prototype.AppendText = function(filename, text) {
+  var that = this;
   var blob = new Blob([text], {type: 'text/plain'});
   var options = {create: false};
   var isAppend = true;
-  this.write(filename, blob, options, isAppend);
+  that.write(filename, blob, options, isAppend);
 }
 
 /**
  * Append the given text to the given file.
  */
-FileSystem.prototype.AppendBlob = function (filename, blob) {
+FileSystem.prototype.AppendBlob = function(filename, blob) {
+  var that = this;
   var options = {create: false};
   var isAppend = true;
-  this.write(filename, blob, options, isAppend);
+  that.write(filename, blob, options, isAppend);
 }
 
 /**
  * Loads the given file and passes the result to the callback.
  */
 FileSystem.prototype.Read = function(filename, callback) {
-  this.filesystem.root.getFile(
+  var that = this;
+  that.filesystem.root.getFile(
     filename,
     {},
     function (fileEntry) {
@@ -127,14 +135,14 @@ FileSystem.prototype.Read = function(filename, callback) {
         function(file) {
           var reader = new FileReader();
           reader.onloadend = function(e) {
-            callback(this.result);
+            callback(this.result); // "this" is correct here.
           }
           reader.readAsText(file);
         },
-        this.handleError
+        that.handleError
       );
     },
-    this.handleError
+    that.handleError
   );
 }
 
@@ -142,14 +150,45 @@ FileSystem.prototype.Read = function(filename, callback) {
  * Deletes the given file.
  */
 FileSystem.prototype.Delete = function(filename) {
-  this.filesystem.root.getFile(
+  var that = this;
+  that.filesystem.root.getFile(
     filename,
     {create: false},
     function (fileEntry) {
-      fileEntry.remove(function() {}, this.handleError);
+      fileEntry.remove(function() {}, that.handleError);
     },
-    this.handleError
+    that.handleError
   );
+}
+
+/**
+ * Private method to recursively create a path from a given directory.
+ */
+FileSystem.prototype.mkdir = function(rootDirEntry, folders, callback) {
+  var that = this;
+  if (folders[0] == '.' || folders[0] == '') {
+    folders = folders.slice(1);
+  }
+  rootDirEntry.getDirectory(
+    folders[0],
+    {create: true},
+    function(dirEntry) {
+      if (folders.length) {
+        that.mkdir(dirEntry, folders.slice(1), callback);
+      } else {
+        callback();
+      }
+    },
+    that.handleError
+  );
+};
+
+/**
+ * Recursive creates the given path from the root.
+ */
+FileSystem.prototype.Mkdir = function(path, callback) {
+  var that = this;
+  that.mkdir(that.filesystem.root, path.split('/'), callback);
 }
 
 /**

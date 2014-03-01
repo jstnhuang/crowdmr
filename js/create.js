@@ -1,8 +1,9 @@
 /**
  * A JobCreator contains the code for the job creation page.
  */
-function JobCreator() {
+function JobCreator(id) {
   var that = this;
+  that.id = id;
   that.filesystem = new FileSystem();
   window.onload = function() {
     that.handlePageLoad(that);
@@ -13,9 +14,9 @@ function JobCreator() {
  * Attaches callbacks when the page loads.
  */
 JobCreator.prototype.handlePageLoad = function(that) {
-  that.datafile = document.querySelector('input[name=datafile]');
-  that.datafile.onchange = function() {
-    that.handleFileChange(that);
+  that.datafiles = document.querySelector('input[name=datafiles]');
+  that.datafiles.onchange = function() {
+    that.handleDataChange(that);
   };
   that.form = document.querySelector('form[name=jobform]');
   that.form.onsubmit = function() {
@@ -27,10 +28,16 @@ JobCreator.prototype.handlePageLoad = function(that) {
  * When the input for the data files changes, request the quota for the files
  * and enable the submit button.
  */
-JobCreator.prototype.handleFileChange = function(that) {
- if (that.datafile.files.length > 0) {
-   var size = that.datafile.files[0].size;
-   that.filesystem.Init(10*size + 1000, function() {});
+JobCreator.prototype.handleDataChange = function(that) {
+ var files = that.datafiles.files;
+ var OVERHEAD_PER_FILE = 200;
+ var NUM_DIRECTORIES = 4;
+ if (files.length > 0) {
+   var size = OVERHEAD_PER_FILE * NUM_DIRECTORIES;
+   for (i=0; i<files.length; i++) {
+     size += files[i].size + OVERHEAD_PER_FILE;
+   }
+   that.filesystem.Init(5*size, function() {});
  } 
 }
 
@@ -38,8 +45,13 @@ JobCreator.prototype.handleFileChange = function(that) {
  * When the form is submitted, write the data files to the HTML 5 filesystem.
  */
 JobCreator.prototype.handleFormSubmit = function(that) {
-  var files = that.datafile.files;
-  for (i=0; i<files.length; i++) {
-    that.filesystem.WriteBlob(files[i].name, files[i]);
-  }
+  function copyFiles() {
+    var files = that.datafiles.files;
+    for (i=0; i<files.length; i++) {
+      var path = [inputDir, files[i].name].join('/');
+      that.filesystem.WriteBlob(path, files[i]);
+    }
+  };
+  var inputDir = [that.id, 'input'].join('/');
+  that.filesystem.Mkdir(inputDir, copyFiles);
 }
