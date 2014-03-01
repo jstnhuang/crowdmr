@@ -10,35 +10,9 @@
       }
     </style>
     <script src="/js/filesystem.js"></script>
+    <script src="/js/create.js"></script>
     <script>
-      function handleFileChange(filesystem) {
-        var datafile = document.querySelector('input[name=datafile]');
-        if (datafile.files.length > 0) {
-          var size = datafile.files[0].size;
-          var callback = function() {
-            document.querySelector('button[type=submit]').disabled = false;
-          };
-          filesystem.Init(10*size + 1000, callback);
-        }
-      }
-      function handleFormSubmit(filesystem) {
-        var files = document.querySelector('input[name=datafile]').files;
-        // Duplicate each file the user selected to the app's fs.
-        for (i=0; i<files.length; i++) {
-          filesystem.WriteBlob(files[i].name, files[i]);
-         }
-      }
-      var filesystem = new FileSystem();
-      window.onload = function() {
-        var datafile = document.querySelector('input[name=datafile]');
-        datafile.onchange = function() {
-          handleFileChange(filesystem);
-        }
-        var form = document.querySelector('form[name=jobform]');
-        form.onsubmit = function() {
-          handleFormSubmit(filesystem);
-        }
-      };
+      var creator = new JobCreator();
     </script>
   </head>
   <body>
@@ -76,7 +50,8 @@
         </div>
         <div class="form-group">
           <div class="col-sm-offset-2 col-sm-10">
-            <button type="submit" class="btn btn-lg btn-primary" disabled="true"/>
+            <button type="submit" class="btn btn-lg btn-primary"
+                disabled="true"/>
               Start job</button>
           </div>
         </div>
