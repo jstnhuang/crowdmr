@@ -23,8 +23,10 @@
         <div class="form-group">
           <label for="mapper" class="col-sm-2 control-label">Mapper</label>
           <div class="col-sm-10">
-            <code>// Mutate and return the data array.</code><br />
-            <code>function mapper(data) {</code><br />
+            <code>// Input: an array of strings.</code><br />
+            <code>// Output: an array of {key: string, value: string} objects.
+            </code><br />
+            <code>function mapper(lines) {</code><br />
             <textarea class="form-control code" rows="10"
               name="mapper"></textarea>
             <code>}</code>
@@ -33,20 +35,29 @@
         <div class="form-group">
           <label for="reducer" class="col-sm-2 control-label">Reducer</label>
           <div class="col-sm-10">
-            <code>// Reduce the data array.</code><br />
-            <code>function reducer(data) {</code><br />
+            <code>// Input: a string key, and an array of string values for that
+              key.</code><br />
+            <code>// Output: an array of strings.
+            </code><br />
+            <code>function reducer(key, values) {</code><br />
             <textarea class="form-control code" rows="10"
               name="reducer"></textarea>
             <code>}</code>
           </div>
         </div>
         <div class="form-group">
-          <label for="dataurl" class="col-sm-2 control-label">
+          <label for="datafiles" class="col-sm-2 control-label">
             Location of data</label>
           <div class="col-sm-10">
             <input type="file" name="datafiles" multiple />
           </div>
         </div>
+        <div class="form-group">
+          <label for="numreducers" class="col-sm-2 control-label">Number of
+            reducers</label>
+          <div class="col-sm-10">
+            <input type="number" name="numreducers" />
+          </div>
         <div class="form-group">
           <div class="col-sm-offset-2 col-sm-10">
             <button type="submit" class="btn btn-lg btn-primary" />

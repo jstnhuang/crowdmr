@@ -1,0 +1,5 @@
+var sum = 0;
+for (i in values) {
+  sum += parseInt(values[i]);
+}
+return ["" + sum];
