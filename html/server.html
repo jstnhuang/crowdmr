@@ -4,22 +4,67 @@
     <title>Run a job - Crowd MapReduce</title>
     {{template "Includes"}}
     <script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
+    <script src="/js/task.js"></script>
+    <script src="/js/clientinfo.js"></script>
     <script src="/js/filesystem.js"></script>
     <script src="/js/server.js"></script>
     <script>
-      var server = new Server('{{.Id}}', '{{.MapperCode}}', '{{.ReducerCode}}');
+      var server = new Server('{{.Id}}', '{{.MapperCode}}', '{{.ReducerCode}}',
+        {{.NumReducers}});
     </script>
   </head>
   <body>
     {{template "Nav"}}
     <div class="container">
       <h1>Job {{.Id}}</h1>
-      <p>Mapper: {{.MapperCode}}</p>
-      <p>Reducer: {{.ReducerCode}}</p>
-      <p>Data located at {{.DataUrl}}</p>
       <p>Share this link to get people running your job:
-        <a href="/job/{{.Id}}" id="sharelink"></a></p>
-      <p id="status">Waiting for clients...</p>
+        <a href="/job/{{.Id}}" id="sharelink">/job/{{.Id}}</a>
+      </p>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">
+            <a href="#settingsCollapse" data-toggle="collapse">Job settings</a>
+          </h3>
+        </div>
+        <div id="settingsCollapse" class="panel-collapse collapse">
+          <div class="panel-body">
+            <table class="table">
+              <tr><th>Setting</th><th>Value</th></tr> 
+              <tr><td>Mapper</td><td>{{.MapperCode}}</td></tr>
+              <tr><td>Reducer</td><td>{{.ReducerCode}}</td></tr>
+              <tr><td>Number of reducers</td><td>{{.NumReducers}}</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <p><strong>Status:</strong> <span id="status">Waiting for clients...
+      </span></p>
+      <div class="progress" id="progressbar">
+        <div class="progress-bar progress-bar-info" id="mapProgress"
+          style="width: 0%">
+          0%
+        </div>
+        <div class="progress-bar progress-bar-success" id="reduceProgress"
+          style="width: 0%">
+          0%
+        </div>
+      </div>
+      <p><strong>Number of clients:</strong> <span id="numclients"></span></p>
+      <table class="table">
+        <tr><td></td><td>Idle</td><td>Running</td><td>Complete</td></tr>
+        <tr>
+          <td>Map</td>
+          <td id="mapidle">0</td>
+          <td id="maprunning">0</td>
+          <td id="mapcomplete">0</td>
+        </tr>
+        <tr>
+          <td>Reduce</td>
+          <td id="reduceidle">0</td>
+          <td id="reducerunning">0</td>
+          <td id="reducecomplete">0</td>
+        </tr>
+      </table>
       <script>
         document.querySelector('#sharelink').innerText =
           location.protocol + "//" + location.host + "/job/{{.Id}}";

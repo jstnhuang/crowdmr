@@ -44,15 +44,33 @@ FileSystem.prototype.handleGranted = function(desiredBytes, grantedBytes,
 }
 
 /**
- * Creates the given file.
+ * Creates the given file and calls the callback with the fileEntry. Prints an
+ * error if the file already exists.
  */
-FileSystem.prototype.Create = function(filename) {
+FileSystem.prototype.Create = function(filename, callback) {
   var that = this;
   that.filesystem.root.getFile(
     filename,
     {create: true, exclusive: true},
     function (fileEntry) {
       console.log('[Filesystem] Created file', filename);
+      callback(fileEntry);
+    },
+    that.handleError
+  );
+}
+
+/**
+ * Opens the given file if it exists, or creates it if it doesn't exist. The
+ * callback is called with the fileEntry in either case.
+ */
+FileSystem.prototype.Open = function(filename, callback) {
+  var that = this;
+  that.filesystem.root.getFile(
+    filename,
+    {create: true},
+    function (fileEntry) {
+      callback(fileEntry);
     },
     that.handleError
   );
@@ -109,22 +127,22 @@ FileSystem.prototype.WriteBlob = function(filename, blob, callback) {
 /**
  * Append the given text to the given file.
  */
-FileSystem.prototype.AppendText = function(filename, text, callback) {
+FileSystem.prototype.AppendText = function(fileEntry, text, callback) {
+  //var that = this;
+  //var blob = new Blob([text], {type: 'text/plain'});
+  //var options = {create: false};
+  //var isAppend = true;
+  //that.write(filename, blob, options, isAppend, callback);
   var that = this;
-  var blob = new Blob([text], {type: 'text/plain'});
-  var options = {create: false};
-  var isAppend = true;
-  that.write(filename, blob, options, isAppend, callback);
-}
-
-/**
- * Append the given text to the given file.
- */
-FileSystem.prototype.AppendBlob = function(filename, blob, callback) {
-  var that = this;
-  var options = {create: false};
-  var isAppend = true;
-  that.write(filename, blob, options, isAppend, callback);
+  fileEntry.createWriter(
+    function(writer) {
+      writer.seek(writer.length);
+      writer.onwriteend = callback;
+      writer.onerror = that.handleError;
+      writer.write(new Blob([text], {type: 'text/plain'})); 
+    },
+    that.handleError
+  );
 }
 
 /**
@@ -149,6 +167,18 @@ FileSystem.prototype.Read = function(filename, callback) {
     },
     that.handleError
   );
+}
+
+/**
+ * Loads the given file as a text file. It returns the data by calling the
+ * callback with an array of strings, where each string is a line in the file.
+ */
+FileSystem.prototype.ReadLines = function(filename, callback) {
+  var that = this;
+  that.Read(filename, function(fileData) {
+    var lines = fileData.split('\n');
+    callback(lines);
+  });
 }
 
 /**
@@ -242,5 +272,5 @@ FileSystem.prototype.Ls = function(path, callback) {
  * Reports an error.
  */
 FileSystem.prototype.handleError = function (error) {
-  console.log('[Filesystem]', error.name + ':', error.message);
+  console.error('[Filesystem]', error.name + ':', error.message);
 }

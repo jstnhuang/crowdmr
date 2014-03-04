@@ -61,7 +61,8 @@ type JobServerData struct {
 	Id          string
 	MapperCode  string
 	ReducerCode string
-	DataUrl     string
+	NumReducers string
+	DataFiles   string
 }
 
 // JobServerController displays the job server page.
@@ -70,12 +71,14 @@ func JobServerController(writer http.ResponseWriter, request *http.Request) {
 	id := vars["id"]
 	mapper := request.FormValue("mapper")
 	reducer := request.FormValue("reducer")
-	dataUrl := request.FormValue("dataurl")
+	numReducers := request.FormValue("numreducers")
+	dataFiles := request.FormValue("datafiles")
 	data := JobServerData{
 		Id:          id,
 		MapperCode:  mapper,
 		ReducerCode: reducer,
-		DataUrl:     dataUrl}
+		NumReducers: numReducers,
+		DataFiles:   dataFiles}
 	err := templates.ExecuteTemplate(writer, "server.html", data)
 	if err != nil {
 		log.Fatal("Failed to execute template: ", err)
