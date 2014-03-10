@@ -233,7 +233,9 @@ Server.prototype.handleMapPhaseDone = function(that) {
       var client = that.clients[clientId]; 
       if (client.Task() === null) {
         var task = that.nextTask(that);
-        that.sendWork(that, clientId, task);
+        if (task !== null) {
+          that.sendWork(that, clientId, task);
+        }
       } else {
         console.error(
           '[Jobtracker] Map phase is done, but client had a non-null task.',
@@ -274,18 +276,21 @@ Server.prototype.nextTask = function(that) {
  */
 Server.prototype.sendWork = function(that, clientId, task) {
   var taskId = task.Id();
+  if (task.IsMap()) {
+    delete that.mapIdle[taskId];
+    that.mapRunning[taskId] = task;
+  } else {
+    delete that.reduceIdle[taskId];
+    that.reduceRunning[taskId] = task;
+  }
   that.filesystem.ReadLines(
     task.path,
     function(data) {
       var clientMsg = {data: data};
 
       if (task.IsMap()) {
-        delete that.mapIdle[taskId];
-        that.mapRunning[taskId] = task;
         clientMsg.mapper = that.mapperCode;
       } else {
-        delete that.reduceIdle[taskId];
-        that.reduceRunning[taskId] = task;
         clientMsg.reducer = that.reducerCode;
       }
       that.updateView(that);
