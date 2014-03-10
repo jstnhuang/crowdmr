@@ -39,7 +39,8 @@ function Server(id, mapperCode, reducerCode, numReducers) {
 
 /**
  * Handle initialization once the filesystem is ready.
- */ Server.prototype.handleFileSystemInit = function(that) {
+ */
+Server.prototype.handleFileSystemInit = function(that) {
   var inputDir = [that.id, 'input'].join('/');
   function callback(files) {
     for (var i=0; i<files.length; i++) {
@@ -169,7 +170,7 @@ Server.prototype.handleClientData = function(that, clientId, data) {
 
 /**
  * Check if there are idle map tasks. If so, send them to the client. If all the
- * map tasks are done, call handleMapPharseDone. Otherwise, do nothing.
+ * map tasks are done, call handleMapPhaseDone. Otherwise, do nothing.
  */
 Server.prototype.handleMapTaskDone = function(that, clientId, task) {
   var taskId = task.Id();
