@@ -58,13 +58,16 @@ JobCreator.prototype.handleFormSubmit = function(that) {
       submitForm();
     } else {
       var path = [inputDir, files[fileIndex].name].join('/');
-      that.filesystem.WriteBlob(
-        path,
-        files[fileIndex],
-        function() {
-          copyFiles(files, fileIndex+1);
-        }
-      );
+      that.filesystem.OpenOrCreate(path, function(fileEntry) {
+        console.log(fileEntry);
+        that.filesystem.WriteBlob(
+          fileEntry,
+          files[fileIndex],
+          function() {
+            copyFiles(files, fileIndex+1);
+          }
+        );
+      });
     }
   };
 
