@@ -52,9 +52,14 @@ Client.prototype.handleServerData = function(that, serverData) {
       if (key === '') {
         continue;
       }
+      if (prevKey === null) {
+        prevKey = key;
+      }
       var value = columns.slice(1).join('\t');
-      if (key !== prevKey && i !== 0) {
+      console.log(i, prevKey, key, value);
+      if (key !== prevKey) {
         var reduceResults = reducer(prevKey, values);
+        console.log('reducing', prevKey, values); 
         for (var j=0; j<reduceResults.length; j++) {
           results.push([prevKey, reduceResults[j]].join('\t'));
         }
@@ -63,6 +68,11 @@ Client.prototype.handleServerData = function(that, serverData) {
       } else {
         values.push(value);
       }
+    }
+    var reduceResults = reducer(key, values);
+    console.log('reducing', key, values); 
+    for (var j=0; j<reduceResults.length; j++) {
+      results.push([key, reduceResults[j]].join('\t'));
     }
   }
 

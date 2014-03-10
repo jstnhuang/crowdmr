@@ -27,4 +27,5 @@ for (var i=1; i<allWords.length; i++) {
     count++;
   }
 }
+results.push([word, count].join('\t'));
 return results;
