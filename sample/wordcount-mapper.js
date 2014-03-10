@@ -10,7 +10,7 @@ for (var i in lines) {
     if (word === '') {
       continue;
     }
-    result.push({key: word, value: "1"}); 
+    result.push([word, '1'].join('\t')); 
   }
 }
 return result;
