@@ -154,7 +154,8 @@ Server.prototype.handleClientData = function(that, clientId, data) {
       callback();
     } else if (index in partitionData) {
       var filename = [folder, 'data_' + index + '.txt'].join('/');
-      that.filesystem.Open(filename, function(fileEntry) {
+      console.log(filename, partitionData[index]);
+      that.filesystem.OpenOrCreate(filename, function(fileEntry) {
         that.filesystem.AppendText(
           fileEntry,
           partitionData[index],
@@ -283,23 +284,25 @@ Server.prototype.sendWork = function(that, clientId, task) {
     delete that.reduceIdle[taskId];
     that.reduceRunning[taskId] = task;
   }
-  that.filesystem.ReadLines(
-    task.path,
-    function(data) {
-      var clientMsg = {data: data};
-
-      if (task.IsMap()) {
-        clientMsg.mapper = that.mapperCode;
-      } else {
-        clientMsg.reducer = that.reducerCode;
+  that.filesystem.Open(task.path, function(fileEntry) {
+    that.filesystem.ReadLines(
+      fileEntry,
+      function(data) {
+        var clientMsg = {data: data};
+        if (task.IsMap()) {
+          clientMsg.mapper = that.mapperCode;
+        } else {
+          clientMsg.reducer = that.reducerCode;
+        }
+        that.updateView(that);
+        that.clients[clientId].SetTask(task);
+        console.log('[Jobtracker] Sending task to client', clientId + ':',
+          task);
+        var connection = that.clients[clientId].Connection();
+        connection.send(clientMsg);
       }
-      that.updateView(that);
-      that.clients[clientId].SetTask(task);
-      console.log('[Jobtracker] Sending task to client', clientId + ':', task);
-      var connection = that.clients[clientId].Connection();
-      connection.send(clientMsg);
-    }
-  );
+    );
+  });
 }
 
 /**
