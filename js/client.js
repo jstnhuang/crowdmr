@@ -65,7 +65,6 @@ Client.prototype.handleServerData = function(that, serverData) {
       var reduceResults = reducer(unmangledKey, values);
       for (var i in reduceResults) {
         var reduceResult = reduceResults[i]
-        console.log("reduceResult", unmangledKey, reduceResult);
         results.push({key: unmangledKey, value: reduceResult});
       }
     }
