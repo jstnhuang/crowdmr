@@ -120,7 +120,7 @@ Server.prototype.handleClientData = function(that, clientId, data) {
     var key = cols[0];
     var hash = that.hashString(key);
     var partitionNum = ((hash % N) + N) % N;
-    var value = cols[1];
+    var value = cols.slice(1).join('\t');
     if (partitionNum in partitionData) {
       partitionData[partitionNum].push([key, value].join('\t'));
     } else {

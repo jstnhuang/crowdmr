@@ -24,9 +24,9 @@ Client.prototype.handleConnectionOpen = function(that) {
 Client.prototype.handleServerData = function(that, serverData) {
   var lines = serverData.data;
   var results = new Array();
-  // The mapper takes in a list of strings, which is what we get from the
-  // server. It returns a list of key/value pairs, where the key and values are
-  // strings.
+  // The mapper takes in an array of strings, which is what we get from the
+  // server. It returns a array of strings representing key/value pairs, where
+  // the key and value are separated by a tab.
   if ('mapper' in serverData) {
     console.log('[Client] processing server map request...');
     var mapper = new Function('lines', serverData.mapper);
@@ -42,30 +42,26 @@ Client.prototype.handleServerData = function(that, serverData) {
   else {
     console.log('[Client] processing server reduce request...');
     var reducer = new Function('key', 'values', serverData.reducer);
-    var parsedLines = {};
-    for (var i in lines) {
+    lines.sort();
+    var prevKey = null;
+    var values = [];
+    for (var i=0; i<lines.length; i++) {
       var line = lines[i];
       var columns = line.split('\t');
-      if (columns[0] === '') {
+      var key = columns[0];
+      if (key === '') {
         continue;
       }
-      // Mangle the key to avoid naming conflicts with members of Object.
-      var key = '_' + columns[0];
       var value = columns.slice(1).join('\t');
-      if (key in parsedLines) {
-        parsedLines[key].push(value);
+      if (key !== prevKey && i !== 0) {
+        var reduceResults = reducer(prevKey, values);
+        for (var j=0; j<reduceResults.length; j++) {
+          results.push([prevKey, reduceResults[j]].join('\t'));
+        }
+        prevKey = key;
+        values = [value];
       } else {
-        parsedLines[key] = [value];
-      }
-    }
-
-    for (var key in parsedLines) {
-      var unmangledKey = key.slice(1);
-      var values = parsedLines[key];
-      var reduceResults = reducer(unmangledKey, values);
-      for (var i in reduceResults) {
-        var reduceResult = reduceResults[i];
-        results.push([unmangledKey, reduceResult].join('\t'));
+        values.push(value);
       }
     }
   }
