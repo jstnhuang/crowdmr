@@ -64,8 +64,8 @@ Client.prototype.handleServerData = function(that, serverData) {
       var values = parsedLines[key];
       var reduceResults = reducer(unmangledKey, values);
       for (var i in reduceResults) {
-        var reduceResult = reduceResults[i]
-        results.push({key: unmangledKey, value: reduceResult});
+        var reduceResult = reduceResults[i];
+        results.push([unmangledKey, reduceResult].join('\t'));
       }
     }
   }
