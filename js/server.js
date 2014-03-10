@@ -116,10 +116,11 @@ Server.prototype.handleClientData = function(that, clientId, data) {
   var N = that.numReducers;
   var partitionData = {};
   for (var i in data) {
-    var key = data[i].key;
+    var cols = data[i].split('\t');
+    var key = cols[0];
     var hash = that.hashString(key);
     var partitionNum = ((hash % N) + N) % N;
-    var value = data[i].value;
+    var value = cols[1];
     if (partitionNum in partitionData) {
       partitionData[partitionNum].push([key, value].join('\t'));
     } else {
