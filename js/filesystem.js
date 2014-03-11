@@ -77,6 +77,34 @@ FileSystem.prototype.Open = function(filename, callback) {
 }
 
 /**
+ * Check if the given file exists. The successCallback is called if it exists
+ * otherwise failureCallback is called.
+ */
+FileSystem.prototype.Touch = function(filename, callback) {
+  var that = this;
+  that.filesystem.root.getFile(
+    filename,
+    {create: false},
+    function (fileEntry) {
+      callback(fileEntry);
+    },
+    that.handleError
+  );
+}
+/*
+FileSystem.prototype.Exist = function(filename, callback) {
+  var that = this;
+  that.filesystem.root.getFile(
+    filename,
+    {create: false},
+    function (fileEntry) {
+      callback(fileEntry);
+    },
+    that.handleError 
+  );
+}
+*/
+/**
  * Write an arbitrary blob to the given file. This is a private method that
  * takes in options, and a boolean append option.
  */

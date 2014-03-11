@@ -121,6 +121,14 @@ Server.prototype.handleClientData = function(that, clientId, data) {
     var hash = that.hashString(key);
     var partitionNum = ((hash % N) + N) % N;
     var value = cols.slice(1).join('\t');
+    /*
+    if (i % 10000 === 0) {
+      console.log('i', i);
+      console.log('data', data[i]);
+      console.log('key', key);
+      console.log('value', value);
+    }
+    */
     if (partitionNum in partitionData) {
       partitionData[partitionNum].push([key, value].join('\t'));
     } else {
@@ -283,11 +291,14 @@ Server.prototype.sendWork = function(that, clientId, task) {
     delete that.reduceIdle[taskId];
     that.reduceRunning[taskId] = task;
   }
+  console.log('task path', task.path);
+  console.log('server id', that.id);
   that.filesystem.ReadLines(
     task.path,
     function(data) {
       var clientMsg = {data: data};
 
+      clientMsg.path = task.path;
       if (task.IsMap()) {
         clientMsg.mapper = that.mapperCode;
       } else {

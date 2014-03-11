@@ -4,6 +4,8 @@
 function Client(id) {
   var that = this;
   that.id = id;
+  that.filesystem = new FileSystem();
+  that.filesystem.Init(0, function(){});
   that.peer = new Peer({key: 'qqz19fffgabjfw29'});
   that.connection = that.peer.connect(id);
   that.connection.on('open', function() { that.handleConnectionOpen(that); });
@@ -27,6 +29,28 @@ Client.prototype.handleServerData = function(that, serverData) {
   // The mapper takes in an array of strings, which is what we get from the
   // server. It returns a array of strings representing key/value pairs, where
   // the key and value are separated by a tab.
+  if ('path' in serverData) {
+    console.log('filename', serverData.path);
+    /*
+    that.filesystem.Open(
+      serverData.path,
+      function (fileEntry) {
+        console.log('file exist');
+      }
+    );
+    /*/
+    console.log(that.filesystem);
+    that.filesystem.Touch(
+      serverData.path,
+      function (fileEntry) {
+        console.log('file exists');
+      }
+    );
+    //*/
+//    var inputDir = [serverData.id, 'input'].join('/');
+//    var filename = inputDir + '/hello.txt';
+//    that.filesystem.WriteText(filename, "hello world!", function(){});
+  }
   if ('mapper' in serverData) {
     console.log('[Client] processing server map request...');
     var mapper = new Function('lines', serverData.mapper);
