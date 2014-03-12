@@ -72,6 +72,7 @@ Server.prototype.handlePeerConnection = function(that, connection) {
  * client some work to do.
  */
 Server.prototype.handleClientConnection = function(that, connection) {
+  console.log(clientId, 'connected');
   var clientId = connection.peer;
   var clientInfo = new ClientInfo(clientId, connection);
   that.clients[clientId] = clientInfo;
@@ -101,6 +102,19 @@ Server.prototype.handleClientDisconnection = function(that, clientId) {
   }
   delete that.clients[clientId];
   that.updateView(that);
+}
+
+Server.prototype.handleClientData = function(that, clientId, clientData) {
+  if ('data' in clientData) {
+    that.handleFileRequest(that, clientId);
+  } else {
+    var data = clientData.data;
+    that.handleReturnResult(that, clientId, data);
+  }
+}
+
+Server.prototype.handleReturnResult = function(that, clientId) {
+
 }
 
 /**

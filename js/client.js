@@ -61,6 +61,8 @@ Client.prototype.handleServerTask = function(that, serverData) {
     },
     function () {
       // TODO: 
+      var result = {data: 'data'};
+      that.connection.send(result);
       console.log(filename, 'file doesn\'t exist');
     }
   );
