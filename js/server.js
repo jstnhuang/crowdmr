@@ -384,6 +384,20 @@ Server.prototype.updateView = function(that) {
   if (reduceProgress == 100) {
     var elapsedTime = window.performance.now() - that.startTime;
     statusText.innerText = 'Done. (' + elapsedTime/1000
-      + ' s since first connection)';
+      + ' seconds since first connection)';
+
+    var outputlist = document.querySelector('#outputlist');
+    var outputDir = [that.id, 'output'].join('/');
+    that.filesystem.Ls(outputDir, function(files) {
+      var listItems = '<ul>';
+      for (var i=0; i<files.length; i++) {
+        var url = files[i].toURL();
+        var name = files[i].name;
+        listItems += '<li><a href="' + url + '" download="' + files[i].name
+          + '">' + name + '</a></li>';
+      }
+      listItems += '</ul>';
+      outputlist.innerHTML = listItems;
+    });
   }
 }

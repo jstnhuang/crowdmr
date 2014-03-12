@@ -65,6 +65,14 @@
           <td id="reducecomplete">0</td>
         </tr>
       </table>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Output files</h3>
+        </div>
+        <div class="panel-body" id="outputlist">
+          <span>Your output files will appear here when the job is done.</span>
+        </div>
+      </div>
       <script>
         document.querySelector('#sharelink').innerText =
           location.protocol + "//" + location.host + "/job/{{.Id}}";
