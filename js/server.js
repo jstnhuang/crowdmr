@@ -72,14 +72,12 @@ Server.prototype.handlePeerConnection = function(that, connection) {
  * client some work to do.
  */
 Server.prototype.handleClientConnection = function(that, connection) {
-  console.log(clientId, 'connected');
   var clientId = connection.peer;
   var clientInfo = new ClientInfo(clientId, connection);
   that.clients[clientId] = clientInfo;
   var task = that.nextTask(that);
   // TODO: if there is no work, add this client to a free list.
   if (task !== null) {
-    //that.sendWork(that, clientId, task);
     that.sendTask(that, clientId, task);
   }
 }
@@ -104,17 +102,30 @@ Server.prototype.handleClientDisconnection = function(that, clientId) {
   that.updateView(that);
 }
 
+/**
+ * When a client sends some data to the server, parse the data and 
+ * decide what to do 
+ */
 Server.prototype.handleClientData = function(that, clientId, clientData) {
+  var task = that.clients[clientId].Task();
   if ('data' in clientData) {
-    that.handleFileRequest(that, clientId);
-  } else {
-    var data = clientData.data;
-    that.handleReturnResult(that, clientId, data);
+    that.handleFileRequest(that, clientId); // NOT TESTED
+  } else if ('mapDone' in clientData) {
+    that.handleMapTaskDone(that, clientId, task);
+  } else if ('reduceDone' in clientData) {
+    that.handleReduceTaskDone(that, clientId, task);
+  } else {  // NOT TESTED
+    that.handleReturnResult(that, clientId, clientData);
   }
 }
 
-Server.prototype.handleReturnResult = function(that, clientId) {
-
+/**
+ * When the client is not a local client, it sends request for 
+ * the data in the file. Fetch the data and send to it.
+ */
+Server.prototype.handleFileRequest = function(that, clientId) {
+  var task = that.clients[clientId].Task();
+  that.sendData(that, clientId, task);
 }
 
 /**
@@ -123,7 +134,7 @@ Server.prototype.handleReturnResult = function(that, clientId) {
  * adds the reduce tasks to the idle queue, and assigns all the clients a reduce
  * task.
  */
-Server.prototype.handleClientData = function(that, clientId, data) {
+Server.prototype.handleReturnResult = function(that, clientId, data) {
   // We expect an array of {key: string, value: string} pairs.
   console.log('[Jobtracker] Data received from', clientId);
 
@@ -294,6 +305,7 @@ Server.prototype.sendTask = function(that, clientId, task) {
   var taskId = task.Id();
   var clientMsg = {path: task.path};
   clientMsg.clientId = clientId;
+  clientMsg.numReducers = that.numReducers;
   if (task.IsMap()) {
     delete that.mapIdle[taskId];
     that.mapRunning[taskId] = task;
@@ -322,7 +334,6 @@ Server.prototype.sendData = function(that, clientId, task) {
     function(data) {
       var clientMsg = {data: data};
 
-      clientMsg.path = task.path;
       if (task.IsMap()) {
         clientMsg.map = 'map'; 
       } else {

@@ -28,7 +28,7 @@ Client.prototype.handleServerConnection = function(that, serverData) {
   if ('path' in serverData) {
     that.handleServerTask(that, serverData);
   }
-  // This is a data message
+  // This is a data message NOT TESTED
   else {
     that.handleServerData(that, serverData);
   }
@@ -39,6 +39,8 @@ Client.prototype.handleServerConnection = function(that, serverData) {
  * the computation and sends the result back to the server.
  */
 Client.prototype.handleServerTask = function(that, serverData) {
+  that.clientId = serverData.clientId;
+  that.numReducers = serverData.numReducers;
   var filename = serverData.path;
   that.filesystem.Exist(
     filename,
@@ -46,12 +48,12 @@ Client.prototype.handleServerTask = function(that, serverData) {
       that.filesystem.ReadLines(
         filename,
         function(data) {
+          that.local = true;
           var quasiServerData = {data: data};
           if ('mapper' in serverData) {
             that.mapper = serverData.mapper;
             quasiServerData.map = 'map';
           } else {
-            console.log(filename, 'exists');
             that.reducer = serverData.reducer;
             quasiServerData.reduce = 'reduce';
           }
@@ -59,14 +61,15 @@ Client.prototype.handleServerTask = function(that, serverData) {
         }
       )
     },
-    function () {
-      // TODO: 
+    function () { // NOT TESTED
+      that.local = false;
       var result = {data: 'data'};
       that.connection.send(result);
-      console.log(filename, 'file doesn\'t exist');
+      //console.log(filename, 'file doesn\'t exist');
     }
   );
 }
+
 /**
  * Processes the computation and sends the result back to the server.
  */
@@ -115,6 +118,83 @@ Client.prototype.handleServerData = function(that, serverData) {
     }
   }
 
-  console.log('[Client] Sending results to server.');
-  that.connection.send(results);
+  if (that.local) {
+    var folder = '';
+    var notice = {};
+    if ('map' in serverData) {
+      folder = [that.id, 'intermediate'].join('/');
+      that.handleWriteData(that, folder, results);     
+      notice.mapDone = 'mapDone';
+    } else {
+      folder = [that.id, 'output'].join('/');
+      that.handleWriteData(that, folder, results);     
+      notice.reduceDone = 'reduceDone';
+    }
+    that.connection.send(notice);
+  } else {
+    console.log('[Client] Sending results to server.');
+    that.connection.send(results);
+  }
+}
+
+Client.prototype.handleWriteData = function(that, folder, results) {
+  // We expect an array of {key: string, value: string} pairs.
+  console.log('[Jobtracker] Data writen to disk from', that.clientId);
+
+  // Buffer the writes to each reduce partition.
+  var N = that.numReducers;
+  var partitionData = {};
+  for (var i in results) {
+    var cols = results[i].split('\t');
+    var key = cols[0];
+    var hash = that.hashString(key);
+    var partitionNum = ((hash % N) + N) % N;
+    var value = cols.slice(1).join('\t');
+    if (partitionNum in partitionData) {
+      partitionData[partitionNum].push([key, value].join('\t'));
+    } else {
+      partitionData[partitionNum] = [[key, value].join('\t')];
+    }
+  }
+  for (var i=0; i<N; i++) {
+    if (i in partitionData) {
+      partitionData[i] = partitionData[i].join('\n') + '\n';
+    }
+  }
+
+  // TODO: investigate parallel writes.
+  function writePartitionsFrom(index) {
+    if (index == N) {
+      // do nothing
+    } else if (index in partitionData) {
+      var filename = [folder, 'data_' + index + '.txt'].join('/');
+      that.filesystem.Open(filename, function(fileEntry) {
+        that.filesystem.AppendText(
+          fileEntry,
+          partitionData[index],
+          writePartitionsFrom(index+1)
+        );
+      });
+    } else {
+      writePartitionsFrom(index+1);
+    }
+  }
+
+  writePartitionsFrom(0);
+ 
+}
+
+/**
+ * Returns a hash for the given string as a 32-bit integer. Copied from Java's
+ * String.hashCode().
+ */
+Client.prototype.hashString = function(str) {
+  var hash = 0;
+  if (str.length === 0) return hash;
+  for (var i=0; i<str.length; i++) {
+    char = str.charCodeAt(i);
+    hash = ((hash<<5)-hash)+char;
+    hash = hash & hash;
+  }
+  return hash;
 }
