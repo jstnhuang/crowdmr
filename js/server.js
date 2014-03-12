@@ -154,7 +154,6 @@ Server.prototype.handleClientData = function(that, clientId, data) {
       callback();
     } else if (index in partitionData) {
       var filename = [folder, 'data_' + index + '.txt'].join('/');
-      console.log(filename, partitionData[index]);
       that.filesystem.OpenOrCreate(filename, function(fileEntry) {
         that.filesystem.AppendText(
           fileEntry,
