@@ -7,15 +7,33 @@ function Client(id) {
   that.peer = new Peer({key: 'qqz19fffgabjfw29'});
   that.connection = that.peer.connect(id);
   that.connection.on('open', function() { that.handleConnectionOpen(that); });
+  that.connection.on('close', function() { that.handleConnectionClose(that); });
+  
+  that.numMaps = 0;
+  that.numReduces = 0;
+  that.currentStatus = 'Connecting to server.';
+
+  // View components
+  that.statusField = $('#status');
+  that.numMapField = $('#nummaps');
+  that.numReduceField = $('#numreduces');
+  that.updateView(that);
 }
 
 /**
  * Attaches callbacks when the peer connection is open.
  */
 Client.prototype.handleConnectionOpen = function(that) {
+  that.currentStatus = 'Connected to server, running tasks.';
+  that.updateView(that);
   that.connection.on('data', function(serverData) {
     that.handleServerData(that, serverData);
  });
+}
+
+Client.prototype.handleConnectionClose = function(that) {
+  that.currentStatus = 'Job complete!';
+  that.updateView(that);
 }
 
 /**
@@ -31,6 +49,7 @@ Client.prototype.handleServerData = function(that, serverData) {
     console.log('[Client] processing server map request...');
     var mapper = new Function('lines', serverData.mapper);
     results = mapper(lines);
+    that.numMaps++;
   }
 
   // The reducer takes in a key and a list of values associated with that key.
@@ -56,10 +75,8 @@ Client.prototype.handleServerData = function(that, serverData) {
         prevKey = key;
       }
       var value = columns.slice(1).join('\t');
-      console.log(i, prevKey, key, value);
       if (key !== prevKey) {
         var reduceResults = reducer(prevKey, values);
-        console.log('reducing', prevKey, values); 
         for (var j=0; j<reduceResults.length; j++) {
           results.push([prevKey, reduceResults[j]].join('\t'));
         }
@@ -70,12 +87,22 @@ Client.prototype.handleServerData = function(that, serverData) {
       }
     }
     var reduceResults = reducer(key, values);
-    console.log('reducing', key, values); 
     for (var j=0; j<reduceResults.length; j++) {
       results.push([key, reduceResults[j]].join('\t'));
     }
+    that.numReduces++;
   }
 
   console.log('[Client] Sending results to server.');
+  that.updateView(that);
   that.connection.send(results);
+}
+
+/**
+ * Update the HTML page with information about the client's state.
+ */
+Client.prototype.updateView = function(that) {
+  that.statusField.text(that.currentStatus);
+  that.numMapField.text(that.numMaps);
+  that.numReduceField.text(that.numReduces);
 }

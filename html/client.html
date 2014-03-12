@@ -6,13 +6,21 @@
     <script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
     <script src="/js/client.js"></script>
     <script>
-      var client = new Client('{{.Id}}');
+      $(document).ready(function() {
+        var client = new Client('{{.Id}}');
+      });
     </script>
   </head>
   <body>
     {{template "Nav"}}
     <div class="container">
       <h1>Helping with job {{.Id}}</h1>
+      <p><strong>Current status:</strong> 
+        <span id="status">Connecting to server.</span></p>
+      <p><strong>Number of map tasks helped:</strong> 
+        <span id="nummaps">0</span></p>
+      <p><strong>Number of reduce tasks helped:</strong> 
+        <span id="numreduces">0</span></p>
     </div>
   </body>
 </html>

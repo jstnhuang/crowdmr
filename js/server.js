@@ -218,6 +218,10 @@ Server.prototype.handleReduceTaskDone = function(that, clientId, task) {
         'Reduce idle queue was nonempty, but nextTask was null.');
     }
   } else if (that.mapSize(that.reduceRunning) == 0) {
+    // Close data connections to signal that we're done.
+    for (var clientId in that.clients) {
+      that.clients[clientId].Connection().close();
+    }
     that.updateView(that);
   }
 }
