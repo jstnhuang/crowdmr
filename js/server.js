@@ -78,7 +78,8 @@ Server.prototype.handleClientConnection = function(that, connection) {
   var task = that.nextTask(that);
   // TODO: if there is no work, add this client to a free list.
   if (task !== null) {
-    that.sendWork(that, clientId, task);
+    //that.sendWork(that, clientId, task);
+    that.sendTask(that, clientId, task);
   }
 }
 
@@ -121,14 +122,6 @@ Server.prototype.handleClientData = function(that, clientId, data) {
     var hash = that.hashString(key);
     var partitionNum = ((hash % N) + N) % N;
     var value = cols.slice(1).join('\t');
-    /*
-    if (i % 10000 === 0) {
-      console.log('i', i);
-      console.log('data', data[i]);
-      console.log('key', key);
-      console.log('value', value);
-    }
-    */
     if (partitionNum in partitionData) {
       partitionData[partitionNum].push([key, value].join('\t'));
     } else {
@@ -192,7 +185,7 @@ Server.prototype.handleMapTaskDone = function(that, clientId, task) {
   if (that.mapSize(that.mapIdle) > 0) {
     var nextTask = that.nextTask(that);
     if (nextTask !== null) {
-      that.sendWork(that, clientId, nextTask);
+      that.sendTask(that, clientId, nextTask);
     } else {
       console.error('[Jobtracker]',
         'Map idle queue was nonempty, but nextTask was null.');
@@ -215,7 +208,7 @@ Server.prototype.handleReduceTaskDone = function(that, clientId, task) {
   if (that.mapSize(that.reduceIdle) > 0) {
     var nextTask = that.nextTask(that);
     if (nextTask !== null) {
-      that.sendWork(that, clientId, nextTask);
+      that.sendTask(that, clientId, nextTask);
     } else {
       console.error('[Jobtracker]',
         'Reduce idle queue was nonempty, but nextTask was null.');
@@ -242,7 +235,7 @@ Server.prototype.handleMapPhaseDone = function(that) {
       if (client.Task() === null) {
         var task = that.nextTask(that);
         if (task !== null) {
-          that.sendWork(that, clientId, task);
+          that.sendTask(that, clientId, task);
         }
       } else {
         console.error(
@@ -280,19 +273,36 @@ Server.prototype.nextTask = function(that) {
 }
 
 /**
- * Loads data for a given task and sends it to a client to process.
+ * Sends the task, including file path, client id, and mapper/reducer 
+ * to a client to process.
  */
-Server.prototype.sendWork = function(that, clientId, task) {
+Server.prototype.sendTask = function(that, clientId, task) {
   var taskId = task.Id();
+  var clientMsg = {path: task.path};
+  clientMsg.clientId = clientId;
   if (task.IsMap()) {
     delete that.mapIdle[taskId];
     that.mapRunning[taskId] = task;
+    clientMsg.mapper = that.mapperCode;
   } else {
     delete that.reduceIdle[taskId];
     that.reduceRunning[taskId] = task;
+    clientMsg.reducer = that.reducerCode;
   }
-  console.log('task path', task.path);
-  console.log('server id', that.id);
+  that.clients[clientId].SetTask(task);
+  that.updateView(that);
+
+  console.log('[Jobtracker] Sending task to client', clientId + ':', task);
+  var connection = that.clients[clientId].Connection();
+  connection.send(clientMsg);
+}
+
+/**
+ * Loads data for a given task and sends it to a client to process.
+ */
+Server.prototype.sendData = function(that, clientId, task) {
+  var taskId = task.Id();
+
   that.filesystem.ReadLines(
     task.path,
     function(data) {
@@ -300,13 +310,11 @@ Server.prototype.sendWork = function(that, clientId, task) {
 
       clientMsg.path = task.path;
       if (task.IsMap()) {
-        clientMsg.mapper = that.mapperCode;
+        clientMsg.map = 'map'; 
       } else {
-        clientMsg.reducer = that.reducerCode;
+        clientMsg.reduce = 'reduce';
       }
-      that.updateView(that);
-      that.clients[clientId].SetTask(task);
-      console.log('[Jobtracker] Sending task to client', clientId + ':', task);
+      console.log('[Jobtracker] Sending data to client', clientId + ':', task);
       var connection = that.clients[clientId].Connection();
       connection.send(clientMsg);
     }

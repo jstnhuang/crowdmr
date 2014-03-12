@@ -16,10 +16,55 @@ function Client(id) {
  */
 Client.prototype.handleConnectionOpen = function(that) {
   that.connection.on('data', function(serverData) {
-    that.handleServerData(that, serverData);
+    that.handleServerConnection(that, serverData);
  });
 }
 
+/**
+ * Process messages received from server
+ */
+Client.prototype.handleServerConnection = function(that, serverData) {
+  // This is a task message
+  if ('path' in serverData) {
+    that.handleServerTask(that, serverData);
+  }
+  // This is a data message
+  else {
+    that.handleServerData(that, serverData);
+  }
+}
+
+/**
+ * Processes the task. If the required data is on a local file, processes
+ * the computation and sends the result back to the server.
+ */
+Client.prototype.handleServerTask = function(that, serverData) {
+  var filename = serverData.path;
+  that.filesystem.Exist(
+    filename,
+    function (fileEntry) {
+      that.filesystem.ReadLines(
+        filename,
+        function(data) {
+          var quasiServerData = {data: data};
+          if ('mapper' in serverData) {
+            that.mapper = serverData.mapper;
+            quasiServerData.map = 'map';
+          } else {
+            console.log(filename, 'exists');
+            that.reducer = serverData.reducer;
+            quasiServerData.reduce = 'reduce';
+          }
+          that.handleServerData(that, quasiServerData);
+        }
+      )
+    },
+    function () {
+      // TODO: 
+      console.log(filename, 'file doesn\'t exist');
+    }
+  );
+}
 /**
  * Processes the computation and sends the result back to the server.
  */
@@ -29,31 +74,9 @@ Client.prototype.handleServerData = function(that, serverData) {
   // The mapper takes in an array of strings, which is what we get from the
   // server. It returns a array of strings representing key/value pairs, where
   // the key and value are separated by a tab.
-  if ('path' in serverData) {
-    console.log('filename', serverData.path);
-    /*
-    that.filesystem.Open(
-      serverData.path,
-      function (fileEntry) {
-        console.log('file exist');
-      }
-    );
-    /*/
-    console.log(that.filesystem);
-    that.filesystem.Touch(
-      serverData.path,
-      function (fileEntry) {
-        console.log('file exists');
-      }
-    );
-    //*/
-//    var inputDir = [serverData.id, 'input'].join('/');
-//    var filename = inputDir + '/hello.txt';
-//    that.filesystem.WriteText(filename, "hello world!", function(){});
-  }
-  if ('mapper' in serverData) {
+  if ('map' in serverData) {
     console.log('[Client] processing server map request...');
-    var mapper = new Function('lines', serverData.mapper);
+    var mapper = new Function('lines', that.mapper);
     results = mapper(lines);
   }
 
@@ -65,7 +88,7 @@ Client.prototype.handleServerData = function(that, serverData) {
   // strings, where the key is separated from the value with a tab.
   else {
     console.log('[Client] processing server reduce request...');
-    var reducer = new Function('key', 'values', serverData.reducer);
+    var reducer = new Function('key', 'values', that.reducer);
     lines.sort();
     var prevKey = null;
     var values = [];
