@@ -35,6 +35,8 @@ function Server(id, mapperCode, reducerCode, numReducers) {
   that.reduceIdle = {};
   that.reduceRunning = {};
   that.reduceComplete = {};
+
+  that.startTime = -1.0;
 }
 
 /**
@@ -75,6 +77,9 @@ Server.prototype.handleClientConnection = function(that, connection) {
   var clientId = connection.peer;
   var clientInfo = new ClientInfo(clientId, connection);
   that.clients[clientId] = clientInfo;
+  if (that.startTime < 0) {
+    that.startTime = window.performance.now();
+  }
   var task = that.nextTask(that);
   // TODO: if there is no work, add this client to a free list.
   if (task !== null) {
@@ -213,7 +218,7 @@ Server.prototype.handleReduceTaskDone = function(that, clientId, task) {
         'Reduce idle queue was nonempty, but nextTask was null.');
     }
   } else if (that.mapSize(that.reduceRunning) == 0) {
-    that.handleJobDone();
+    that.updateView(that);
   }
 }
 
@@ -331,13 +336,6 @@ Server.prototype.mapSize = function(map) {
 }
 
 /**
- * Update the page status when the job is done.
- */
-Server.prototype.handleJobDone = function() {
-  document.querySelector('#status').innerText = 'Done!';
-}
-
-/**
  * Update the job tracker view. If the map phase is not done, then we display te
  * number of idle reducers as that.numReducers.
  */
@@ -384,6 +382,8 @@ Server.prototype.updateView = function(that) {
       'In progress (' + ((mapProgress/2) + (reduceProgress/2)) + '%)';
   }
   if (reduceProgress == 100) {
-    statusText.innerText = 'Done.';
+    var elapsedTime = window.performance.now() - that.startTime;
+    statusText.innerText = 'Done. (' + elapsedTime/1000
+      + ' s since first connection)';
   }
 }
