@@ -6,10 +6,22 @@ function Client(id) {
   that.id = id;
   that.filesystem = new FileSystem();
   that.filesystem.Init(0, function(){});
-  that.peer = new Peer({key: 'qqz19fffgabjfw29'});
+  that.peer = new Peer({
+    key: 'qqz19fffgabjfw29',
+    debug: 3,
+    logFunction: function() {
+      console.log('[PeerJS]', Array.prototype.slice.call(arguments).join(' '));
+    }
+  });
+  that.peer.on('error', function(error) {
+    console.error('[PeerJS]: Peer error:', error);
+  });
   that.connection = that.peer.connect(id);
   that.connection.on('open', function() { that.handleConnectionOpen(that); });
   that.connection.on('close', function() { that.handleConnectionClose(that); });
+  that.connection.on('error', function(error) {
+    console.error('[PeerJS]: Connection error:', error);
+  });
   
   that.numMaps = 0;
   that.numReduces = 0;
@@ -26,14 +38,17 @@ function Client(id) {
  * Attaches callbacks when the peer connection is open.
  */
 Client.prototype.handleConnectionOpen = function(that) {
+  console.log('Connected to server.');
   that.currentStatus = 'Connected to server, running tasks.';
   that.updateView(that);
   that.connection.on('data', function(serverData) {
+    console.log('Got data from the server.');
     that.handleServerConnection(that, serverData);
  });
 }
 
 Client.prototype.handleConnectionClose = function(that) {
+  console.log('Server closed connection.');
   that.currentStatus = 'Job complete!';
   that.updateView(that);
 }
@@ -60,6 +75,11 @@ Client.prototype.handleServerTask = function(that, serverData) {
   that.clientId = serverData.clientId;
   that.numReducers = serverData.numReducers;
   var filename = serverData.path;
+  if ('mapper' in serverData) {
+    that.mapper = serverData.mapper;
+  } else {
+    that.reducer = serverData.reducer;
+  }
   that.filesystem.Exist(
     filename,
     function (fileEntry) {
@@ -69,12 +89,10 @@ Client.prototype.handleServerTask = function(that, serverData) {
           that.local = true;
           var quasiServerData = {data: data};
           if ('mapper' in serverData) {
-            that.mapper = serverData.mapper;
             quasiServerData.map = 'map';
           } else {
-            that.reducer = serverData.reducer;
             quasiServerData.reduce = 'reduce';
-          }
+          }       
           that.handleServerData(that, quasiServerData);
         }
       )
@@ -83,7 +101,6 @@ Client.prototype.handleServerTask = function(that, serverData) {
       that.local = false;
       var result = {data: 'data'};
       that.connection.send(result);
-      //console.log(filename, 'file doesn\'t exist');
     }
   );
 }
@@ -196,7 +213,7 @@ Client.prototype.handleWriteData = function(that, folder, results) {
       // do nothing
     } else if (index in partitionData) {
       var filename = [folder, 'data_' + index + '.txt'].join('/');
-      that.filesystem.Open(filename, function(fileEntry) {
+      that.filesystem.OpenOrCreate(filename, function(fileEntry) {
         that.filesystem.AppendText(
           fileEntry,
           partitionData[index],

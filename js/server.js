@@ -20,13 +20,28 @@ function Server(id, mapperCode, reducerCode, numReducers) {
   });
 
   // Set up peer.
-  that.peer = new Peer(id, {key: 'qqz19fffgabjfw29'});
-  that.peer.on(
-    'connection',
-    function(connection) {
-      that.handlePeerConnection(that, connection);
+  that.peer = new Peer(id, {
+    key: 'qqz19fffgabjfw29',
+    debug: 3,
+    logFunction: function() {
+      console.log('[PeerJS]', Array.prototype.slice.call(arguments).join(' '));
     }
-  );
+  });
+  that.peer.on('open', function(id) {
+    console.log('PeerJS server connected.');
+    that.peer.on(
+      'connection',
+      function(connection) {
+        that.handlePeerConnection(that, connection);
+      }
+    );
+    that.peer.on(
+      'error',
+      function(error) {
+        console.error('[PeerJS] Peer error:', error);
+      }
+    );
+  });
 
   // Task data structures.
   that.mapIdle = {};
@@ -58,7 +73,13 @@ Server.prototype.handleFileSystemInit = function(that) {
  * Attaches callbacks when a peer connects.
  */
 Server.prototype.handlePeerConnection = function(that, connection) {
+  console.log('Peer connected.', connection);
+  var clientId = connection.peer;
+  var clientInfo = new ClientInfo(clientId, connection);
+  that.clients[clientId] = clientInfo;
+
   connection.on('open', function() {
+    console.log('Client connected.');
     that.handleClientConnection(that, connection);
   });
   connection.on('close', function() {
@@ -66,6 +87,9 @@ Server.prototype.handlePeerConnection = function(that, connection) {
   });
   connection.on('data', function(data) {
     that.handleClientData(that, connection.peer, data);
+  });
+  connection.on('error', function(error) {
+    console.error('[PeerJS] Connection error:', error, connection);
   });
 }
 
@@ -75,8 +99,8 @@ Server.prototype.handlePeerConnection = function(that, connection) {
  */
 Server.prototype.handleClientConnection = function(that, connection) {
   var clientId = connection.peer;
-  var clientInfo = new ClientInfo(clientId, connection);
-  that.clients[clientId] = clientInfo;
+  //var clientInfo = new ClientInfo(clientId, connection);
+  //that.clients[clientId] = clientInfo;
   if (that.startTime < 0) {
     that.startTime = window.performance.now();
   }
