@@ -76,6 +76,23 @@ FileSystem.prototype.Open = function(filename, callback) {
   );
 }
 
+/**
+ * Check if the given file exists. The successCallback is called if it exists
+ * otherwise failureCallback is called.
+ */
+FileSystem.prototype.Exist = function(filename, successCallback,
+    failureCallback) {
+  var that = this;
+  that.filesystem.root.getFile(
+    filename,
+    {create: false},
+    function (fileEntry) {
+      successCallback(fileEntry);
+    },
+    failureCallback
+  );
+}
+
 FileSystem.prototype.OpenOrCreate = function(filename, callback) {
   var that = this;
   that.filesystem.root.getFile(

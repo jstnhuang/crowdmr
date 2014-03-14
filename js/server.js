@@ -20,13 +20,28 @@ function Server(id, mapperCode, reducerCode, numReducers) {
   });
 
   // Set up peer.
-  that.peer = new Peer(id, {key: 'qqz19fffgabjfw29'});
-  that.peer.on(
-    'connection',
-    function(connection) {
-      that.handlePeerConnection(that, connection);
+  that.peer = new Peer(id, {
+    key: 'qqz19fffgabjfw29',
+    debug: 3,
+    logFunction: function() {
+      console.log('[PeerJS]', Array.prototype.slice.call(arguments).join(' '));
     }
-  );
+  });
+  that.peer.on('open', function(id) {
+    console.log('PeerJS server connected.');
+    that.peer.on(
+      'connection',
+      function(connection) {
+        that.handlePeerConnection(that, connection);
+      }
+    );
+    that.peer.on(
+      'error',
+      function(error) {
+        console.error('[PeerJS] Peer error:', error);
+      }
+    );
+  });
 
   // Task data structures.
   that.mapIdle = {};
@@ -58,7 +73,13 @@ Server.prototype.handleFileSystemInit = function(that) {
  * Attaches callbacks when a peer connects.
  */
 Server.prototype.handlePeerConnection = function(that, connection) {
+  console.log('Peer connected.', connection);
+  var clientId = connection.peer;
+  var clientInfo = new ClientInfo(clientId, connection);
+  that.clients[clientId] = clientInfo;
+
   connection.on('open', function() {
+    console.log('Client connected.');
     that.handleClientConnection(that, connection);
   });
   connection.on('close', function() {
@@ -66,6 +87,9 @@ Server.prototype.handlePeerConnection = function(that, connection) {
   });
   connection.on('data', function(data) {
     that.handleClientData(that, connection.peer, data);
+  });
+  connection.on('error', function(error) {
+    console.error('[PeerJS] Connection error:', error, connection);
   });
 }
 
@@ -75,15 +99,15 @@ Server.prototype.handlePeerConnection = function(that, connection) {
  */
 Server.prototype.handleClientConnection = function(that, connection) {
   var clientId = connection.peer;
-  var clientInfo = new ClientInfo(clientId, connection);
-  that.clients[clientId] = clientInfo;
+  //var clientInfo = new ClientInfo(clientId, connection);
+  //that.clients[clientId] = clientInfo;
   if (that.startTime < 0) {
     that.startTime = window.performance.now();
   }
   var task = that.nextTask(that);
   // TODO: if there is no work, add this client to a free list.
   if (task !== null) {
-    that.sendWork(that, clientId, task);
+    that.sendTask(that, clientId, task);
   }
 }
 
@@ -108,12 +132,38 @@ Server.prototype.handleClientDisconnection = function(that, clientId) {
 }
 
 /**
+ * When a client sends some data to the server, parse the data and 
+ * decide what to do 
+ */
+Server.prototype.handleClientData = function(that, clientId, clientData) {
+  var task = that.clients[clientId].Task();
+  if ('data' in clientData) {
+    that.handleFileRequest(that, clientId); // NOT TESTED
+  } else if ('mapDone' in clientData) {
+    that.handleMapTaskDone(that, clientId, task);
+  } else if ('reduceDone' in clientData) {
+    that.handleReduceTaskDone(that, clientId, task);
+  } else {  // NOT TESTED
+    that.handleReturnResult(that, clientId, clientData);
+  }
+}
+
+/**
+ * When the client is not a local client, it sends request for 
+ * the data in the file. Fetch the data and send to it.
+ */
+Server.prototype.handleFileRequest = function(that, clientId) {
+  var task = that.clients[clientId].Task();
+  that.sendData(that, clientId, task);
+}
+
+/**
  * When the client completes a task, write the intermediate data, update the
  * task status, and assign a new task. When all the mappers are complete, this
  * adds the reduce tasks to the idle queue, and assigns all the clients a reduce
  * task.
  */
-Server.prototype.handleClientData = function(that, clientId, data) {
+Server.prototype.handleReturnResult = function(that, clientId, data) {
   // We expect an array of {key: string, value: string} pairs.
   console.log('[Jobtracker] Data received from', clientId);
 
@@ -189,7 +239,7 @@ Server.prototype.handleMapTaskDone = function(that, clientId, task) {
   if (that.mapSize(that.mapIdle) > 0) {
     var nextTask = that.nextTask(that);
     if (nextTask !== null) {
-      that.sendWork(that, clientId, nextTask);
+      that.sendTask(that, clientId, nextTask);
     } else {
       console.error('[Jobtracker]',
         'Map idle queue was nonempty, but nextTask was null.');
@@ -212,7 +262,7 @@ Server.prototype.handleReduceTaskDone = function(that, clientId, task) {
   if (that.mapSize(that.reduceIdle) > 0) {
     var nextTask = that.nextTask(that);
     if (nextTask !== null) {
-      that.sendWork(that, clientId, nextTask);
+      that.sendTask(that, clientId, nextTask);
     } else {
       console.error('[Jobtracker]',
         'Reduce idle queue was nonempty, but nextTask was null.');
@@ -243,7 +293,7 @@ Server.prototype.handleMapPhaseDone = function(that) {
       if (client.Task() === null) {
         var task = that.nextTask(that);
         if (task !== null) {
-          that.sendWork(that, clientId, task);
+          that.sendTask(that, clientId, task);
         }
       } else {
         console.error(
@@ -281,30 +331,48 @@ Server.prototype.nextTask = function(that) {
 }
 
 /**
- * Loads data for a given task and sends it to a client to process.
+ * Sends the task, including file path, client id, and mapper/reducer 
+ * to a client to process.
  */
-Server.prototype.sendWork = function(that, clientId, task) {
+Server.prototype.sendTask = function(that, clientId, task) {
   var taskId = task.Id();
+  var clientMsg = {path: task.path};
+  clientMsg.clientId = clientId;
+  clientMsg.numReducers = that.numReducers;
   if (task.IsMap()) {
     delete that.mapIdle[taskId];
     that.mapRunning[taskId] = task;
+    clientMsg.mapper = that.mapperCode;
   } else {
     delete that.reduceIdle[taskId];
     that.reduceRunning[taskId] = task;
+    clientMsg.reducer = that.reducerCode;
   }
+  that.clients[clientId].SetTask(task);
+  that.updateView(that);
+
+  console.log('[Jobtracker] Sending task to client', clientId + ':', task);
+  var connection = that.clients[clientId].Connection();
+  connection.send(clientMsg);
+}
+
+/**
+ * Loads data for a given task and sends it to a client to process.
+ */
+Server.prototype.sendData = function(that, clientId, task) {
+  var taskId = task.Id();
+
   that.filesystem.Open(task.path, function(fileEntry) {
     that.filesystem.ReadLines(
       fileEntry,
       function(data) {
         var clientMsg = {data: data};
         if (task.IsMap()) {
-          clientMsg.mapper = that.mapperCode;
+          clientMsg.map = 'map'; 
         } else {
-          clientMsg.reducer = that.reducerCode;
+          clientMsg.reduce = 'reduce';
         }
-        that.updateView(that);
-        that.clients[clientId].SetTask(task);
-        console.log('[Jobtracker] Sending task to client', clientId + ':',
+        console.log('[Jobtracker] Sending data to client', clientId + ':',
           task);
         var connection = that.clients[clientId].Connection();
         connection.send(clientMsg);
