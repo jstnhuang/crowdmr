@@ -142,7 +142,8 @@ FileSystem.prototype.WriteBlob = function(fileEntry, blob, callback) {
 FileSystem.prototype.AppendText = function(fileEntry, text, callback) {
   var that = this;
   var isAppend = true;
-  that.write(fileEntry, new Blob([text], {type: 'text/plain'}), isAppend);
+  that.write(fileEntry, new Blob([text], {type: 'text/plain'}), isAppend,
+    callback);
 }
 
 /**
