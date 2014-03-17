@@ -1,0 +1,5 @@
+report/.project
+report/.texlipse
+report/tmp/*
+report/*.pdf
+report/*.synctex.gz
