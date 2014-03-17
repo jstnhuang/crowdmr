@@ -160,9 +160,10 @@ structure is a list of clients who have connected, as well as what task they
 are assigned to.
 
 When a client connects, an idle task is assigned to a client. The job tracker
-loads the input data from the virtual filesystem into memory, then sends the
-data and code to the client. The actions of the client are described more in the
-next section.
+sends the code and the task, which contains the location of the data, to the
+client. In the normal case, the client doesn't have the data, in which case it
+requests the data from the job tracker. The job tracker then loads the input
+data from the virtual filesystem into memory, and sends it to the client.
 
 If a client disconnects, the job tracker looks up which task they were assigned
 to, and moves the task back into the idle queue. Otherwise, the client responds
@@ -189,9 +190,76 @@ passed to the reducer, which returns the reduced array of values. When finished,
 the client sends the data back to the job tracker as a flattened list of
 key/value pairs.
 
-\section{Performance}
+\subsection{Local clients}
+The job creator may want to run the job on their local machine. In that case, it
+doesn't make sense to send data over the network. When the job tracker sends a
+task to the client, the client checks the browser's filesystem to see if it has
+the data necessary for the task. If it does have the data, the client realizes
+it is running in the same browser as the job creator. We call this a local
+client.
+
+The local client behaves similarly to the client, except that it loads data and
+writes results directly to the filesystem instead of sending and receiving it
+over the network to the job tracker. However, the local client and the job
+tracker are executing in a separate processes, so they still communicate tasks
+and statuses over the network.
+
+\section{Experiments}
+We evaluated the performance of our system, varying several variables:
+\begin{itemize}
+  \item The number of clients
+  \item The size of the input file chunks
+  \item The number of reducers
+  \item Whether the clients are local or not
+\end{itemize}
+
+\subsection{Performance using only local clients}
+
+
+\section{Design alternatives and future work}
+Based on our results, it appears that the major limiting factor to the
+performance of our system was the time taken to transport data between hosts.
+However, part of this difference is simply due to different usage patterns.
+
+In a typical MapReduce system, such as the one described by Dean and Ghemawat
+\cite{dean2008mapreduce} the data is uploaded and distributed amongst the
+worker nodes before the job starts. Additionally, the output data stays on the
+worker nodes. This makes sense if many MapReduce jobs will be chained together,
+the output of one becoming the input of another. In contrast, our system has a
+``single use'' design, where the of sending input data to and downloading
+output data from the worker nodes is included with every job.
+
+A typical MapReduce system stores data on the worker nodes, so it can also
+leverage the fact that reduce workers may already have some of the intermediate
+data, whereas in our system, reduce workers must get all of the intermediate
+data from the job tracker.
+
+If, in our system, we could assume that volunteers could store files for long
+periods of time, then we could design our system to more closely match a typical
+MapReduce system. This would allow us to amortize the cost of uploading and
+downloading data over multiple, chained jobs, and allow reduce workers to
+potentially download less data.
+
+Another design alternative is to assume that the job creator has access to some
+kind of distributed cloud storage. This would reduce the job tracker's
+bandwidth usage, since it would only send and receive control signals instead
+of data. It would also allow us to amortize the cost of multiple jobs. However,
+it would still require reduce workers to download the full amount of
+intermediate data.
+
+Another general area for future work would be to look into the use of WebWorkers
+to handle filesystem and network operations. Because of the Javascript
+concurrency model, every filesystem and network operation we perform is
+blocking. WebWorkers are another relatively new browser technology that allow
+code to be run in separate, heavyweight threads. This could potentially allow us
+to make expensive operations non-blocking.
 
 \section{Conclusion}
+In this paper, we presented Crowd MapReduce, a MapReduce implementation that
+allows users to run jobs in their browser with the help of other peers on the
+network. Our system almost no server support because the application is run
+entirely on the client side. We also evaluated the performance of our system and
+discussed the issues we faced in building it.
 
 \bibliographystyle{unsrt}
 \bibliography{report}
