@@ -1,5 +1,6 @@
 \documentclass{article} % For LaTeX2e
-\usepackage{nips13submit_e, times, graphicx}
+\usepackage{nips13submit_e, times, graphicx, epstopdf}
+\epstopdfsetup{update}
 
 \title{Experiences implementing peer-to-peer MapReduce in the browser}
 
@@ -20,7 +21,7 @@ amounts of data. However, the average person typically doesn't have easy access
 to a MapReduce implementation. This paper presents Crowd MapReduce, which allows
 jobs to be created and run through a browser-based interface. The computation is
 distributed across volunteers who visit a given URL, in a peer-to-peer way. We
-found that our system did not deliver good performance, and discuss the
+found that our system did not deliver good performance, and discussed the
 challenges involved in implementing our system.
 \end{abstract}
 
@@ -179,7 +180,7 @@ download links for the output files from the virtual filesystem.
 
 \subsection{Job client}
 The URL for a job client page contains the unique job ID necessary for the
-client to connect to the job tracker. When it is a assigned a map task, it
+client to connect to the job tracker. When it is assigned a map task, it
 simply evaluates the mapper code as a Javascript function, and passes in the
 array of data given by the job tracker. It then returns the results of the
 mapper back to the job tracker.
@@ -214,7 +215,52 @@ We evaluated the performance of our system, varying several variables:
 \end{itemize}
 
 \subsection{Performance using only local clients}
+To test the performance of our system, we try to measure the aforementioned 
+variables independently. In this part we run the job tracker and the clients 
+on the same machine. The file sizes are varyig from 1M to 32M, while we fixed 
+the total size of the files to be 256M. Hence there are from 256 to 8 files 
+respectively to be read into the file system. In figure~\ref{local}, we show 
+the running time of the word count job against different number of local 
+clients while fixing the number of reducers to be 4. We could see that the 
+common behaviour is the running time decreases as the number of clients increases
+initially and finally becomes oscillating in a small range as the number of 
+clients further increases.
 
+\begin{figure}[h]
+  \centering
+    \includegraphics[width=0.75\textwidth]{local}
+    \caption{MapReduce running time against number of local clients. We fixed 
+    the number of reducers to be 4. Different lines show the behaviour of 
+  different file size and number of files.}
+    \label{local}
+\end{figure}
+
+To find out the influence of number of reducers, we fix the number of clients
+to be 4 and the file size to be 8M and run the word count map-reduce job on 
+different number of reducers. Figure~\ref{reducer} shows the result. It seems
+it doesn't change the running time so much, at least in this test case.
+
+\begin{figure}[h]
+  \centering
+    \includegraphics[width=0.5\textwidth]{reducer}
+    \caption{MapReduce running time against number of reducers.}
+    \label{reducer}
+\end{figure}
+
+\subsection{Performance using only remote clients}
+In this part we test almost the same thing as in the previous part except that 
+the clients are running on a remote machine. Reasonably it takes much longer
+since the input and output data have to be send to clients and back to the job
+tracker respectively. We only tested the case where there are 4 reducers and 
+where the files are of size 8M. Figure~\ref{remote} shows the similar behaviour
+as the local clients.
+
+\begin{figure}[h]
+  \centering
+    \includegraphics[width=0.75\textwidth]{remote}
+    \caption{MapReduce running time against number of remote clients.}
+    \label{remote}
+\end{figure}
 
 \section{Design alternatives and future work}
 Based on our results, it appears that the major limiting factor to the
